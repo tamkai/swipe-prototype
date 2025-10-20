@@ -64,6 +64,13 @@ const PatternSelector = ({ onSelectPattern }) => {
       description: 'ダミーデータで結果画面を表示',
       preview: '🔍',
       category: 'デバッグ'
+    },
+    {
+      id: 'sliderTest',
+      name: '🎚️ スライダーUIテスト',
+      description: '円形スライダーの見た目と操作感を確認',
+      preview: '⚙️',
+      category: 'デバッグ'
     }
   ];
 

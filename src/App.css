@@ -12,9 +12,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
 }
 
@@ -37,12 +34,12 @@ body.swipe-active {
   padding: 20px;
   gap: 40px;
   min-height: 100vh;
-  justify-content: center;
 }
 
 .app.swipe-mode {
   height: 100vh;
   overflow: hidden;
+  justify-content: center;
 }
 
 .app.results-mode {
@@ -112,7 +109,7 @@ body.swipe-active {
     -webkit-tap-highlight-color: transparent;
   }
 
-  body, html {
+  body.swipe-active, body.swipe-active html {
     touch-action: none;
     overscroll-behavior: none;
   }

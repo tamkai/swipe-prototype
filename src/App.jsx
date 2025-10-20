@@ -7,6 +7,7 @@ import AssessmentStackA from './components/AssessmentStackA';
 import AssessmentStackB from './components/AssessmentStackB';
 import KeywordSwipeStack from './components/KeywordSwipeStack';
 import ResultsDisplay from './components/ResultsDisplay';
+import DimensionSlider from './components/DimensionSlider';
 import { questions } from './data/questions';
 import { assessmentQuestions } from './data/assessmentQuestions';
 import { assessmentQuestionsC } from './data/assessmentQuestionsC';
@@ -25,7 +26,7 @@ function App() {
 
   // スワイプモード時にbodyのスクロールを無効化
   useEffect(() => {
-    if (selectedPattern && !isComplete) {
+    if (selectedPattern && !isComplete && selectedPattern !== 'sliderTest') {
       document.body.classList.add('swipe-active');
     } else {
       document.body.classList.remove('swipe-active');
@@ -44,6 +45,13 @@ function App() {
       setSelectedPattern('keywordSwipe');
       setIsComplete(true);
       console.log('デバッグモード: ダミーデータで結果表示', dummyHistory);
+      return;
+    }
+
+    // スライダーテストモード
+    if (patternId === 'sliderTest') {
+      setSelectedPattern('sliderTest');
+      setIsComplete(false);
       return;
     }
 
@@ -83,10 +91,61 @@ function App() {
   };
 
   return (
-    <div className={`app ${!selectedPattern ? 'select-mode' : isComplete && selectedPattern === 'keywordSwipe' ? 'results-mode' : 'swipe-mode'}`}>
+    <div className={`app ${!selectedPattern ? 'select-mode' : selectedPattern === 'sliderTest' ? 'select-mode' : isComplete && selectedPattern === 'keywordSwipe' ? 'results-mode' : 'swipe-mode'}`}>
       {!selectedPattern ? (
         // パターン選択画面
         <PatternSelector onSelectPattern={handlePatternSelect} />
+      ) : selectedPattern === 'sliderTest' ? (
+        // スライダーテスト画面
+        <div style={{
+          width: '100%',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          padding: '40px 20px',
+          gap: '30px',
+          paddingBottom: '60px'
+        }}>
+          <h1 style={{ color: 'white', fontSize: '32px', fontWeight: '800', marginBottom: '20px' }}>
+            円形スライダーUIテスト
+          </h1>
+
+          <DimensionSlider
+            dimension="動機"
+            pole_a="目的整合"
+            keyword_a="冷静な判断"
+            pole_b="内発"
+            keyword_b="情熱の勢い"
+            value={0.7}
+            onChange={(value) => console.log('動機:', value)}
+            showDescription={true}
+            description={`動機は、物事を始めるときに何があなたを動かすかを示す軸です。
+
+目的整合タイプは、目標や期待に応えることを重視し、冷静に判断してから行動します。戦略的で、社会貢献や役割を意識する傾向があります。
+
+内発タイプは、自分の中から湧き上がる情熱や好奇心を大切にし、ワクワクする気持ちを優先します。直感的で、興味関心や楽しさを追求する傾向があります。`}
+          />
+
+          <button
+            onClick={handleRestart}
+            style={{
+              padding: '16px 32px',
+              fontSize: '18px',
+              fontWeight: '700',
+              backgroundColor: 'white',
+              color: '#667eea',
+              border: 'none',
+              borderRadius: '16px',
+              cursor: 'pointer',
+              marginTop: '20px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+            }}
+          >
+            ← パターン選択に戻る
+          </button>
+        </div>
       ) : isComplete ? (
         // 完了画面 - キーワードスワイプの場合は結果表示、それ以外は従来の完了画面
         selectedPattern === 'keywordSwipe' ? (
