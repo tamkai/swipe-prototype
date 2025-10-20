@@ -397,12 +397,119 @@ npm run preview
 
 ---
 
-**更新日**: 2025-10-16
-**最終更新**: タイプ2診断構想の追加、keyword-candidates.csv UXバイアス調整完了
+---
+
+## 🎚️ タイプ2診断UI開発（2025-10-20）
+
+### 新しいアプローチ: スライダー式自己評価
+
+#### タイプ2の再定義
+従来の「質問文80問」ではなく、**8軸の自己評価スライダー**に方針転換。
+
+**理由**:
+- 質問文形式では「熟考」は実現できない（質問の聞き方を変えても表面的）
+- 本質は**メタ認知的な自己評価**
+- タイプ1（無意識）× タイプ2（自己認識）のギャップ分析が目的
+
+#### 実装完了: DimensionSlider コンポーネント ✅
+
+**ファイル**: `src/components/DimensionSlider.jsx`
+
+**機能**:
+- ✅ 左右対称の円形スライダーデザイン
+- ✅ グラデーション背景（青→灰→赤）
+- ✅ スライダー位置に応じた色変化（左=青、右=赤）
+- ✅ リアルタイム位置表示（「目的整合寄り」「中間」「内発寄り」など）
+- ✅ 端の値（0-10%, 90-100%）は「やや」なし
+- ✅ 説明文表示（16px、左詰め、改行対応、whiteSpace: 'pre-line'）
+- ✅ readOnlyモード（タイプ1結果表示用）
+- ✅ onChangeコールバック（タイプ2入力用）
+
+**説明文の構造**:
+```
+動機は、物事を始めるときに何があなたを動かすかを示す軸です。
+
+目的整合タイプは、目標や期待に応えることを重視し、冷静に判断してから行動します。戦略的で、社会貢献や役割を意識する傾向があります。
+
+内発タイプは、自分の中から湧き上がる情熱や好奇心を大切にし、ワクワクする気持ちを優先します。直感的で、興味関心や楽しさを追求する傾向があります。
+```
+（軸の説明 + 両極の具体例）
+
+**スマホ対応**:
+- ✅ スクロール可能（useEffectで`sliderTest`を除外）
+- ✅ touch-actionはswipe-modeのみ無効化
+- ✅ bodyのflex centeringを削除
+- ✅ レイアウト: `justifyContent: 'flex-start'`で上から配置
+
+**テスト用ページ**:
+- パターン選択画面に「🎚️ スライダーUIテスト」を追加
+- 動機軸のサンプルで操作感確認可能
+- URL: http://192.168.11.20:5173/ → デバッグメニュー
+
+### Git管理
+
+#### ブランチ構成
+```
+main
+  └─ feature/type1-results (作業中)
+```
+
+**mainブランチ**:
+- コミット: `79fa680` "Initial commit: 3 swipe patterns completed"
+- 内容: 案1/2/3の完成版
+
+**feature/type1-resultsブランチ**:
+- コミット: `368d33a` "Add circular slider UI prototype for Type 2 diagnosis"
+- 内容: DimensionSliderコンポーネント + テストページ
+
+### 次のステップ候補
+
+1. **8軸すべて表示**: 8軸分のスライダーを縦に並べて全体像確認
+2. **タイプ1結果画面**: スワイプ診断の結果を8軸スライダーで表示（readOnlyモード）
+3. **タイプ2診断フロー**: 1軸1画面で説明を読みながら自己評価
+4. **差分表示**: タイプ1とタイプ2の結果を重ねて表示
+
+### 技術的な修正履歴
+
+#### スクロール問題の解決（スマホ）
+**問題**: sliderTest画面でスクロールできない（iPhone 17 Pro）
+
+**原因**:
+1. `useEffect`で`selectedPattern`があれば常に`swipe-active`クラス追加
+2. `body.swipe-active`で`overflow: hidden`
+3. bodyの`display: flex; align-items: center`で中央揃え
+
+**解決策**:
+```javascript
+// App.jsx useEffect
+if (selectedPattern && !isComplete && selectedPattern !== 'sliderTest') {
+  document.body.classList.add('swipe-active');
+}
+```
+
+```css
+/* App.css */
+body {
+  /* display: flex削除 */
+}
+
+.app.swipe-mode {
+  justify-content: center; /* swipe-modeのみ中央揃え */
+}
+
+body.swipe-active, body.swipe-active html {
+  touch-action: none; /* swipe-activeの時だけ */
+}
+```
+
+---
+
+**更新日**: 2025-10-20
+**最終更新**: 円形スライダーUIプロトタイプ完成、スマホスクロール問題解決
 **セッション内容**:
-- 創造性診断×ワークショップの最適構成検討
-- タイプ1×タイプ2診断の理論的整理
-- キーワード群の14箇所バイアス修正完了
-- マルチエージェント活用による質問文生成プラン策定
-**次回セッション**: タイプ2診断の質問文生成（80問）
+- タイプ2診断の方針転換（質問80問 → 8軸自己評価スライダー）
+- DimensionSliderコンポーネント実装
+- スマホでのスクロール問題を徹底的にデバッグ・修正
+- Git管理開始（main + feature/type1-results）
+**次回セッション**: 8軸表示 or タイプ1結果画面 or タイプ2診断フロー
 **作成者**: tamkai + Claude Code
