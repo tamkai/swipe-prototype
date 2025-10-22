@@ -3,7 +3,8 @@ import DimensionSlider from './DimensionSlider';
 import { dimensionsData } from '../data/dimensionsData';
 
 const CreativeCompassResults = ({ results, results2, onRestart }) => {
-  const [copyStatus, setCopyStatus] = useState('');
+  const [showDebugText, setShowDebugText] = useState(false);
+  const [debugText, setDebugText] = useState('');
 
   // デバッグ用：診断データをテキスト形式で生成
   const generateDebugText = () => {
@@ -40,17 +41,11 @@ const CreativeCompassResults = ({ results, results2, onRestart }) => {
     return text;
   };
 
-  // クリップボードにコピー
-  const handleCopyData = async () => {
-    try {
-      const debugText = generateDebugText();
-      await navigator.clipboard.writeText(debugText);
-      setCopyStatus('コピーしました！');
-      setTimeout(() => setCopyStatus(''), 2000);
-    } catch (err) {
-      setCopyStatus('コピーに失敗しました');
-      setTimeout(() => setCopyStatus(''), 2000);
-    }
+  // テキストを表示する
+  const handleShowDebugText = () => {
+    const text = generateDebugText();
+    setDebugText(text);
+    setShowDebugText(true);
   };
 
   return (
@@ -210,7 +205,7 @@ const CreativeCompassResults = ({ results, results2, onRestart }) => {
             デバッグ（AI解説文生成用）
           </div>
           <button
-            onClick={handleCopyData}
+            onClick={handleShowDebugText}
             style={{
               width: '100%',
               padding: '12px 24px',
@@ -224,8 +219,43 @@ const CreativeCompassResults = ({ results, results2, onRestart }) => {
               transition: 'all 0.2s'
             }}
           >
-            📋 診断データをコピー {copyStatus && `✓ ${copyStatus}`}
+            📋 診断データを表示
           </button>
+
+          {/* テキストボックス */}
+          {showDebugText && (
+            <div style={{
+              marginTop: '15px'
+            }}>
+              <textarea
+                value={debugText}
+                readOnly
+                style={{
+                  width: '100%',
+                  height: '300px',
+                  padding: '15px',
+                  fontSize: '13px',
+                  fontFamily: 'monospace',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  color: '#1f2937',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '12px',
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                  lineHeight: '1.6'
+                }}
+                onClick={(e) => e.target.select()}
+              />
+              <div style={{
+                fontSize: '11px',
+                color: 'rgba(255, 255, 255, 0.6)',
+                marginTop: '8px',
+                textAlign: 'center'
+              }}>
+                ↑ テキストボックスをクリックして全選択し、コピーしてください
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
