@@ -16,7 +16,7 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
       // 下スワイプ = どちらともいえない
       if (info.offset.y > 0) {
         onSwipe('neither', item);
-        setBorderColor('#8b5cf6');
+        setBorderColor('#9ca3af');
         await controls.start({
           y: 500,
           opacity: 0,
@@ -40,7 +40,7 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
       onSwipe(direction, item);
 
       // 枠線の色を設定
-      setBorderColor(direction === 'match' ? '#10b981' : '#ef4444');
+      setBorderColor(direction === 'match' ? '#34d399' : '#f97316');
 
       await controls.start({
         x: targetX,
@@ -67,7 +67,7 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
     onSwipe(direction, item);
 
     // 枠線の色を設定
-    setBorderColor(direction === 'match' ? '#10b981' : '#ef4444');
+    setBorderColor(direction === 'match' ? '#34d399' : '#f97316');
 
     await controls.start({
       x: targetX,
@@ -81,8 +81,8 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
     // 先にonSwipeを呼んでテキストを更新
     onSwipe('neither', item);
 
-    // 「どちらともいえない」時は紫色の枠線
-    setBorderColor('#8b5cf6');
+    // 「どちらともいえない」時はグレーの枠線
+    setBorderColor('#9ca3af');
 
     controls.start({
       y: 500,
@@ -188,12 +188,12 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
               padding: '16px 24px',
               fontSize: '20px',
               fontWeight: '700',
-              backgroundColor: '#10b981',
+              backgroundColor: '#34d399',
               color: 'white',
               border: 'none',
               borderRadius: '16px',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+              boxShadow: '0 4px 12px rgba(52, 211, 153, 0.4)',
               transition: 'all 0.2s',
             }}
             onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
@@ -209,12 +209,12 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
               padding: '16px 24px',
               fontSize: '20px',
               fontWeight: '700',
-              backgroundColor: '#ef4444',
+              backgroundColor: '#f97316',
               color: 'white',
               border: 'none',
               borderRadius: '16px',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+              boxShadow: '0 4px 12px rgba(249, 115, 22, 0.4)',
               transition: 'all 0.2s',
             }}
             onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
@@ -233,12 +233,12 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
             padding: '14px 24px',
             fontSize: '18px',
             fontWeight: '700',
-            backgroundColor: '#8b5cf6',
+            backgroundColor: '#9ca3af',
             color: 'white',
             border: 'none',
             borderRadius: '12px',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+            boxShadow: '0 4px 12px rgba(156, 163, 175, 0.3)',
             transition: 'all 0.2s',
           }}
           onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}

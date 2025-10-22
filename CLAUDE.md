@@ -504,12 +504,195 @@ body.swipe-active, body.swipe-active html {
 
 ---
 
-**更新日**: 2025-10-20
-**最終更新**: 円形スライダーUIプロトタイプ完成、スマホスクロール問題解決
+## 🎯 タイプ1×タイプ2 結果表示画面（2025-10-22）
+
+### デュアルマーカーシステム実装完了 ✅
+
+#### 背景と要件
+タイプ1（スワイプ診断：無意識）とタイプ2（自己評価：意識的）の結果を同一画面で比較表示するUIを実装。メタ認知のギャップを視覚化することが目的。
+
+#### 実装内容
+
+**ファイル**:
+- `src/components/DimensionSlider.jsx` (デュアルマーカー対応)
+- `src/components/CreativeCompassResults.jsx` (結果表示画面)
+
+**デュアルマーカー仕様**:
+- **タイプ1マーカー（直感判断）**: 下向き三角▼、バーの上に配置、ラベル「直感判断」
+- **タイプ2マーカー（自己認識）**: 上向き三角▲、バーの下に配置、ラベル「自己認識」
+- **色**: 両方とも統一色 `#374151`（ダークグレー）
+- **位置**: バーに先端が接する配置
+
+**技術的な課題と解決**:
+
+1. **0.0値のバグ**
+   - **問題**: `collaboration: 0.0` が中央（0.5）に表示される
+   - **原因**: `results[dimension.id] || 0.5` で、`0.0`がfalsyのため`0.5`に変換
+   - **解決**: `results[dimension.id] ?? 0.5` に変更（nullish coalescing）
+
+2. **エンドポイント位置調整**
+   - **左端** (value ≤ 0.05): `calc(${value * 100}% + 4px)`
+   - **右端** (value ≥ 0.95): `calc(${value * 100}% - 30px)` ※両マーカー共通
+   - **中央値**: `${value * 100}%`（補正なし）
+
+3. **マーカー位置のズレ問題**
+   - **問題**: 同じ値（0.45）なのに8-10pxずれて表示される
+   - **原因**: ラベルの文字数が異なる（「直感」2文字 vs 「自己認識」4文字）ため、flexboxコンテナの幅が違い、left-alignmentで視覚的なズレが発生
+   - **解決**: ラベルを「直感」→「直感判断」に変更し、両方4文字に統一
+
+**最終的なマーカー構造**:
+```javascript
+// タイプ1マーカー（直感判断）
+<div style={{
+  position: 'absolute',
+  left: value <= 0.05 ? `calc(${value * 100}% + 4px)`
+      : value >= 0.95 ? `calc(${value * 100}% - 30px)`
+      : `${value * 100}%`,
+  transform: 'translateX(-8px)',
+  top: '-4px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: value <= 0.05 ? 'flex-start'
+            : value >= 0.95 ? 'flex-end'
+            : 'center'
+}}>
+  <span style={{ fontSize: '11px', marginBottom: '2px' }}>直感判断</span>
+  <div style={{ /* 下向き三角 */ }} />
+</div>
+
+// タイプ2マーカー（自己認識）も同様の構造
+```
+
+**デバッグ用テストデータ** (`App.jsx`):
+```javascript
+results={{
+  motivation: 0.25,
+  generation: 0.75,
+  progress: 0.5,
+  value: 0.25,
+  expression: 0.8,
+  thinking: 0.45,      // Type2と同値でアラインメント検証
+  execution: 1.0,      // 右端テスト
+  collaboration: 0.0   // 左端テスト（0.0バグ検証）
+}}
+results2={{
+  motivation: 0.68,
+  generation: 0.82,
+  progress: 0.51,      // わずかなズレでメタ認知トリガー
+  value: 0.63,
+  expression: 0.37,
+  thinking: 0.45,      // Type1と同値でアラインメント検証
+  execution: 1.0,      // 右端テスト
+  collaboration: 0.0   // 左端テスト
+}}
+```
+
+#### ユーザーフィードバック
+- **「そろいました！とってもいいです！！！」**
+- エンドポイントの位置が完璧に揃った
+- マーカーがピクセル単位で正確に配置されている
+- メタ認知のギャップが一目で理解できるUI
+
+#### 学び
+- **文字数の統一が重要**: flexboxでleft-alignmentを使う場合、コンテナ幅が揃わないと視覚的にズレる
+- **nullish coalescing (`??`)**: falsyな`0.0`を扱う場合は`||`ではなく`??`を使う
+- **エンドポイント補正**: 左右対称の補正値（左+4px、右-30px）で視覚的バランスを実現
+
+---
+
+## 🎨 スライダーUI改善（2025-10-22）
+
+### カスタムつまみ実装完了 ✅
+
+#### 背景
+スライダーUIテスト画面の改善。自明情報の削除、データソース統一、カスタムつまみによる色の動的変更を実装。
+
+#### 実装内容
+
+**改善項目**:
+
+1. **不要な情報の削除**
+   - `showPositionText` をデフォルト `false` に変更
+   - 「内発寄り」などの位置ラベルを非表示（自己評価時は自明）
+
+2. **データソースの統一**
+   - sliderTestページを `dimensionsData.js` から取得するように変更
+   - `keyword_a/b` → `keywords_a/b`（配列形式）に統一
+   - 結果画面と同じフォーマット
+
+3. **初期値を中央に変更**
+   - `value={0.7}` → `value={0.5}`（中央スタート）
+
+4. **中央ガイドライン追加**
+   - バーの中央に縦線（2px幅、16px高さ、#d1d5db）
+   - zIndex: 5（バーより上、マーカーより下）
+
+5. **カスタムつまみによる色変更** ⭐
+   - ネイティブthumbを完全に透明化（`opacity: 0`）
+   - カスタムdivでつまみを視覚的に表示
+   - **色の仕様**:
+     - 中央付近（0.4-0.6）: グレー `#9ca3af`
+     - 左側（< 0.4）: 青 `#3b82f6`
+     - 右側（> 0.6）: 赤 `#ef4444`
+   - **ドラッグエフェクト**: `scale(1.1)` で選択時に拡大
+
+**技術的な実装詳細**:
+
+```javascript
+// カスタムつまみの位置計算
+left: `calc(${localValue * 100}% - 14px)`  // つまみ半径14pxを引く
+
+// 色の判定ロジック（useCallback）
+const getColorForValue = useCallback((val) => {
+  if (val >= 0.4 && val <= 0.6) return '#9ca3af';  // グレー
+  else if (val < 0.4) return '#3b82f6';            // 青
+  else return '#ef4444';                           // 赤
+}, []);
+
+// ドラッグ時の拡大エフェクト
+transform: isDragging ? 'scale(1.1)' : 'scale(1)'
+```
+
+**ネイティブthumbの透明化**:
+```css
+.custom-slider::-webkit-slider-thumb {
+  opacity: 0;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+}
+```
+
+**試行錯誤の経緯**:
+
+1. **CSS変数アプローチ**: `var(--thumb-color)` → pseudo-elementで機能せず
+2. **動的CSSインジェクション**: `styleEl.textContent` で色を更新 → 初期値が反映されない
+3. **カスタムつまみ方式** ← 最終採用
+   - ネイティブthumbを透明化
+   - カスタムdivで視覚表示
+   - `pointerEvents: 'none'` で操作は下のinputが受ける
+
+#### ユーザーフィードバック
+- **「いいですね！バッチリです！」**
+- 初期値が中央でグレー
+- スライダー移動で色が確実に変化
+- ドラッグ時のエフェクトが気持ちいい
+- 両端でもずれない正確な位置
+
+#### 修正されたファイル
+- [src/components/DimensionSlider.jsx](src/components/DimensionSlider.jsx) - カスタムつまみ実装
+- [src/App.jsx](src/App.jsx) - dimensionsData統一、初期値0.5
+
+---
+
+**更新日**: 2025-10-22
+**最終更新**: スライダーUI改善完了（カスタムつまみ、色の動的変更、中央ガイドライン）
 **セッション内容**:
-- タイプ2診断の方針転換（質問80問 → 8軸自己評価スライダー）
-- DimensionSliderコンポーネント実装
-- スマホでのスクロール問題を徹底的にデバッグ・修正
-- Git管理開始（main + feature/type1-results）
-**次回セッション**: 8軸表示 or タイプ1結果画面 or タイプ2診断フロー
+- デュアルマーカーシステム完成（Type1×Type2結果比較）
+- スライダーUIテスト画面の改善
+- 不要な自明情報の削除
+- カスタムつまみによる色の動的変更実装
+- 中央ガイドライン追加
+**次回セッション**: タイプ2診断フロー実装（8軸自己評価入力） or データ収集機能
 **作成者**: tamkai + Claude Code

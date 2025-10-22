@@ -8,11 +8,15 @@ import AssessmentStackB from './components/AssessmentStackB';
 import KeywordSwipeStack from './components/KeywordSwipeStack';
 import ResultsDisplay from './components/ResultsDisplay';
 import DimensionSlider from './components/DimensionSlider';
+import CreativeCompassResults from './components/CreativeCompassResults';
+import Type2DiagnosisFlow from './components/Type2DiagnosisFlow';
+import IntegratedDiagnosisFlow from './components/IntegratedDiagnosisFlow';
 import { questions } from './data/questions';
 import { assessmentQuestions } from './data/assessmentQuestions';
 import { assessmentQuestionsC } from './data/assessmentQuestionsC';
 import { assessmentQuestionsD } from './data/assessmentQuestionsD';
 import { keywordSwipeData } from './data/keywordSwipeData';
+import { dimensionsData } from './data/dimensionsData';
 import { generateRandomKeywordSet } from './utils/keywordSelector';
 import { generateDummySwipeHistory } from './utils/dummyData';
 import './App.css';
@@ -21,12 +25,17 @@ function App() {
   const [selectedPattern, setSelectedPattern] = useState(null);
   const [isComplete, setIsComplete] = useState(false);
   const [swipeHistory, setSwipeHistory] = useState([]);
+  const [type2Results, setType2Results] = useState(null);
   const [randomKeywords, setRandomKeywords] = useState(keywordSwipeData);
   const [isLoadingKeywords, setIsLoadingKeywords] = useState(false);
 
   // スワイプモード時にbodyのスクロールを無効化
   useEffect(() => {
-    if (selectedPattern && !isComplete && selectedPattern !== 'sliderTest') {
+    if (selectedPattern && !isComplete &&
+        selectedPattern !== 'sliderTest' &&
+        selectedPattern !== 'resultsTest' &&
+        selectedPattern !== 'type2Diagnosis' &&
+        selectedPattern !== 'integratedDiagnosis') {
       document.body.classList.add('swipe-active');
     } else {
       document.body.classList.remove('swipe-active');
@@ -51,6 +60,13 @@ function App() {
     // スライダーテストモード
     if (patternId === 'sliderTest') {
       setSelectedPattern('sliderTest');
+      setIsComplete(false);
+      return;
+    }
+
+    // 結果画面テストモード
+    if (patternId === 'resultsTest') {
+      setSelectedPattern('resultsTest');
       setIsComplete(false);
       return;
     }
@@ -88,13 +104,50 @@ function App() {
     setSelectedPattern(null);
     setIsComplete(false);
     setSwipeHistory([]);
+    setType2Results(null);
+  };
+
+  const handleType2Complete = (results) => {
+    console.log('タイプ2診断結果:', results);
+    setType2Results(results);
+    setIsComplete(true);
   };
 
   return (
-    <div className={`app ${!selectedPattern ? 'select-mode' : selectedPattern === 'sliderTest' ? 'select-mode' : isComplete && selectedPattern === 'keywordSwipe' ? 'results-mode' : 'swipe-mode'}`}>
+    <div className={`app ${!selectedPattern ? 'select-mode' : selectedPattern === 'sliderTest' || selectedPattern === 'resultsTest' || selectedPattern === 'type2Diagnosis' || selectedPattern === 'integratedDiagnosis' ? 'select-mode' : isComplete && selectedPattern === 'keywordSwipe' ? 'results-mode' : 'swipe-mode'}`}>
       {!selectedPattern ? (
         // パターン選択画面
         <PatternSelector onSelectPattern={handlePatternSelect} />
+      ) : selectedPattern === 'resultsTest' ? (
+        // 結果画面テスト
+        <CreativeCompassResults
+          results={{
+            motivation: 0.25,   // タイプ1: 目的整合寄り
+            generation: 0.75,   // タイプ1: 発散寄り
+            progress: 0.5,      // タイプ1: 中間（完全一致）
+            value: 0.25,        // タイプ1: 改善寄り
+            expression: 0.8,    // タイプ1: 自己表現寄り
+            thinking: 0.45,     // タイプ1: 中間
+            execution: 1.0,     // タイプ1: 即興寄り（右端）
+            collaboration: 0.0  // タイプ1: 協働駆動寄り（左端）
+          }}
+          results2={{
+            motivation: 0.68,   // タイプ2: 内発寄り（ギャップ大・アナログ）
+            generation: 0.82,   // タイプ2: 発散寄り（近い・アナログ）
+            progress: 0.51,     // タイプ2: 中間（微妙にずれ・メタ認知トリガー）
+            value: 0.63,        // タイプ2: 発明寄り（ギャップ大・アナログ）
+            expression: 0.37,   // タイプ2: 共感価値寄り（ギャップ大・アナログ）
+            thinking: 0.45,     // タイプ2: 具体寄り（完全一致・更新）
+            execution: 1.0,     // タイプ2: 即興寄り（右端）
+            collaboration: 0.0  // タイプ2: 単独集中寄り（左端）
+          }}
+          onRestart={handleRestart}
+        />
+      ) : selectedPattern === 'integratedDiagnosis' ? (
+        // 統合診断フロー（タイプ1→タイプ2→統合結果）
+        <IntegratedDiagnosisFlow
+          onBack={handleRestart}
+        />
       ) : selectedPattern === 'sliderTest' ? (
         // スライダーテスト画面
         <div style={{
@@ -108,24 +161,20 @@ function App() {
           gap: '30px',
           paddingBottom: '60px'
         }}>
-          <h1 style={{ color: 'white', fontSize: '32px', fontWeight: '800', marginBottom: '20px' }}>
+          <h1 style={{ color: 'white', fontSize: '32px', fontWeight: '800', marginBottom: '20px', textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)' }}>
             円形スライダーUIテスト
           </h1>
 
           <DimensionSlider
-            dimension="動機"
-            pole_a="目的整合"
-            keyword_a="冷静な判断"
-            pole_b="内発"
-            keyword_b="情熱の勢い"
-            value={0.7}
+            dimension={dimensionsData[0].dimension}
+            pole_a={dimensionsData[0].pole_a}
+            keywords_a={dimensionsData[0].keywords_a}
+            pole_b={dimensionsData[0].pole_b}
+            keywords_b={dimensionsData[0].keywords_b}
+            value={0.5}
             onChange={(value) => console.log('動機:', value)}
             showDescription={true}
-            description={`動機は、物事を始めるときに何があなたを動かすかを示す軸です。
-
-目的整合タイプは、目標や期待に応えることを重視し、冷静に判断してから行動します。戦略的で、社会貢献や役割を意識する傾向があります。
-
-内発タイプは、自分の中から湧き上がる情熱や好奇心を大切にし、ワクワクする気持ちを優先します。直感的で、興味関心や楽しさを追求する傾向があります。`}
+            description={dimensionsData[0].description}
           />
 
           <button
@@ -135,17 +184,34 @@ function App() {
               fontSize: '18px',
               fontWeight: '700',
               backgroundColor: 'white',
-              color: '#667eea',
+              color: '#374151',
               border: 'none',
               borderRadius: '16px',
               cursor: 'pointer',
               marginTop: '20px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
             }}
           >
             ← パターン選択に戻る
           </button>
         </div>
+      ) : selectedPattern === 'type2Diagnosis' ? (
+        // タイプ2診断フロー
+        isComplete ? (
+          // 診断完了後は結果表示（タイプ2のみ、自己認識マーカー表示）
+          <div style={{ width: '100%', overflowY: 'auto', maxHeight: '100vh' }}>
+            <CreativeCompassResults
+              results={{}}
+              results2={type2Results}
+              onRestart={handleRestart}
+            />
+          </div>
+        ) : (
+          <Type2DiagnosisFlow
+            onComplete={handleType2Complete}
+            onBack={handleRestart}
+          />
+        )
       ) : isComplete ? (
         // 完了画面 - キーワードスワイプの場合は結果表示、それ以外は従来の完了画面
         selectedPattern === 'keywordSwipe' ? (
@@ -165,7 +231,7 @@ function App() {
             <h2 style={{ fontSize: '32px', fontWeight: '800' }}>
               テスト完了！
             </h2>
-            <p style={{ fontSize: '18px', opacity: 0.9 }}>
+            <p style={{ fontSize: '18px', color: 'rgba(255, 255, 255, 0.9)' }}>
               {selectedPattern === 'assessmentA' || selectedPattern === 'assessmentB'
                 ? assessmentQuestions.length
                 : selectedPattern === 'assessmentC'
@@ -181,12 +247,12 @@ function App() {
                 fontSize: '18px',
                 fontWeight: '700',
                 backgroundColor: 'white',
-                color: '#667eea',
+                color: '#374151',
                 border: 'none',
                 borderRadius: '16px',
                 cursor: 'pointer',
                 marginTop: '20px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
               }}
             >
               別のパターンを試す
