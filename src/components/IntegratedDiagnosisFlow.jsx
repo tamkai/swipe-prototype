@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import BasicInfoInput from './BasicInfoInput';
 import KeywordSwipeStack from './KeywordSwipeStack';
 import Type2DiagnosisFlow from './Type2DiagnosisFlow';
 import CreativeCompassResults from './CreativeCompassResults';
@@ -6,7 +7,8 @@ import { keywordSwipeData } from '../data/keywordSwipeData';
 import { calculateScores } from '../utils/scoreCalculator';
 
 const IntegratedDiagnosisFlow = ({ onBack }) => {
-  const [phase, setPhase] = useState('instruction'); // instruction, type1, type2, results
+  const [phase, setPhase] = useState('basicInfo'); // basicInfo, instruction, type1, type2, results
+  const [basicInfo, setBasicInfo] = useState(null);
   const [type1Results, setType1Results] = useState(null);
   const [type2Results, setType2Results] = useState(null);
   const [swipeHistory, setSwipeHistory] = useState([]);
@@ -60,13 +62,24 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
     setPhase('type1');
   };
 
+  // 基本情報入力完了時
+  const handleBasicInfoComplete = (info) => {
+    setBasicInfo(info);
+    setPhase('instruction');
+  };
+
   // 再スタート
   const handleRestart = () => {
-    setPhase('instruction');
+    setPhase('basicInfo');
+    setBasicInfo(null);
     setType1Results(null);
     setType2Results(null);
     setSwipeHistory([]);
   };
+
+  if (phase === 'basicInfo') {
+    return <BasicInfoInput onComplete={handleBasicInfoComplete} />;
+  }
 
   if (phase === 'instruction') {
     return (
@@ -392,6 +405,7 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
         <CreativeCompassResults
           results={resultsForDisplay}
           results2={results2ForDisplay}
+          basicInfo={basicInfo}
           onRestart={handleRestart}
         />
       </div>

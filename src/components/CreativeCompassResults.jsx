@@ -2,13 +2,30 @@ import { useState } from 'react';
 import DimensionSlider from './DimensionSlider';
 import { dimensionsData } from '../data/dimensionsData';
 
-const CreativeCompassResults = ({ results, results2, onRestart }) => {
+const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => {
   const [showDebugText, setShowDebugText] = useState(false);
   const [debugText, setDebugText] = useState('');
 
   // デバッグ用：診断データをテキスト形式で生成
   const generateDebugText = () => {
     let text = '# AFFLATUS創造性診断 結果データ\n\n';
+
+    // 基本情報
+    if (basicInfo) {
+      text += `## 基本情報\n`;
+      text += `- お名前: ${basicInfo.name}\n`;
+      if (basicInfo.title) {
+        text += `- 職業・肩書き: ${basicInfo.title}\n`;
+      }
+      const experiencePercentage = Math.round(basicInfo.creativeExperience * 100);
+      const getExperienceLevel = (val) => {
+        if (val < 0.3) return '少ない';
+        if (val > 0.7) return '多い';
+        return '中程度';
+      };
+      text += `- 創造体験レベル: ${experiencePercentage}% (${getExperienceLevel(basicInfo.creativeExperience)})\n\n`;
+      text += '---\n\n';
+    }
 
     dimensionsData.forEach((dimension) => {
       const val1 = results[dimension.id] ?? 0.5;
