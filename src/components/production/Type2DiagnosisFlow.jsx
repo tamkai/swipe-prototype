@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { dimensionsData } from '../data/dimensionsData';
+import { dimensionsData } from '../../data/dimensionsData';
 import DimensionSlider from './DimensionSlider';
 
 const Type2DiagnosisFlow = ({ onComplete, onBack }) => {

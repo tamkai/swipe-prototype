@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import PatternSelector from './components/PatternSelector';
-import FourWayCardStack from './components/FourWayCardStack';
-import SimpleCardStack from './components/SimpleCardStack';
-import VisualFeedbackCardStack from './components/VisualFeedbackCardStack';
-import AssessmentStackA from './components/AssessmentStackA';
-import AssessmentStackB from './components/AssessmentStackB';
-import KeywordSwipeStack from './components/KeywordSwipeStack';
-import ResultsDisplay from './components/ResultsDisplay';
-import DimensionSlider from './components/DimensionSlider';
-import CreativeCompassResults from './components/CreativeCompassResults';
-import Type2DiagnosisFlow from './components/Type2DiagnosisFlow';
-import IntegratedDiagnosisFlow from './components/IntegratedDiagnosisFlow';
+// Prototypes (試作用)
+import PatternSelector from './components/prototypes/PatternSelector';
+import FourWayCardStack from './components/prototypes/FourWayCardStack';
+import SimpleCardStack from './components/prototypes/SimpleCardStack';
+import VisualFeedbackCardStack from './components/prototypes/VisualFeedbackCardStack';
+import AssessmentStackA from './components/prototypes/AssessmentStackA';
+import AssessmentStackB from './components/prototypes/AssessmentStackB';
+// Production (本番用)
+import KeywordSwipeStack from './components/production/KeywordSwipeStack';
+import ResultsDisplay from './components/production/ResultsDisplay';
+import DimensionSlider from './components/production/DimensionSlider';
+import CreativeCompassResults from './components/production/CreativeCompassResults';
+import Type2DiagnosisFlow from './components/production/Type2DiagnosisFlow';
+import IntegratedDiagnosisFlow from './components/production/IntegratedDiagnosisFlow';
 import { questions } from './data/questions';
 import { assessmentQuestions } from './data/assessmentQuestions';
 import { assessmentQuestionsC } from './data/assessmentQuestionsC';

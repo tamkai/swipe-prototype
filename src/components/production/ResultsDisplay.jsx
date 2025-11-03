@@ -1,5 +1,5 @@
-import { calculateScores, scoreToPercentage } from '../utils/scoreCalculator';
-import { dimensionDescriptions, getScoreComment } from '../data/dimensionDescriptions';
+import { calculateScores, scoreToPercentage } from '../../utils/scoreCalculator';
+import { dimensionDescriptions, getScoreComment } from '../../data/dimensionDescriptions';
 
 const ResultsDisplay = ({ swipeHistory, onRestart }) => {
   const scores = calculateScores(swipeHistory);

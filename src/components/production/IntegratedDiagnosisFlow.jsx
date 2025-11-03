@@ -3,8 +3,9 @@ import BasicInfoInput from './BasicInfoInput';
 import KeywordSwipeStack from './KeywordSwipeStack';
 import Type2DiagnosisFlow from './Type2DiagnosisFlow';
 import CreativeCompassResults from './CreativeCompassResults';
-import { keywordSwipeData } from '../data/keywordSwipeData';
-import { calculateScores } from '../utils/scoreCalculator';
+import { keywordSwipeData } from '../../data/keywordSwipeData';
+import { calculateScores } from '../../utils/scoreCalculator';
+import { createSession, saveAfflatusResponse } from '../../services/supabase';
 
 const IntegratedDiagnosisFlow = ({ onBack }) => {
   const [phase, setPhase] = useState('basicInfo'); // basicInfo, instruction, type1, type2, results
@@ -12,6 +13,8 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
   const [type1Results, setType1Results] = useState(null);
   const [type2Results, setType2Results] = useState(null);
   const [swipeHistory, setSwipeHistory] = useState([]);
+  const [sessionId, setSessionId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // フェーズ変更時に画面上部にスクロール
   useEffect(() => {
@@ -52,8 +55,30 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
   };
 
   // タイプ2診断完了時
-  const handleType2Complete = (results) => {
+  const handleType2Complete = async (results) => {
     setType2Results(results);
+    setIsSaving(true);
+
+    // データをSupabaseに保存
+    if (sessionId) {
+      try {
+        await saveAfflatusResponse(sessionId, {
+          basicInfo,
+          type1Results,
+          type2Results: results,
+          swipeHistory,
+          sliderHistory: results // Type2の結果をsliderHistoryとしても保存
+        });
+        console.log('診断結果保存成功');
+      } catch (error) {
+        console.error('診断結果保存失敗:', error);
+        // エラーでも結果画面は表示
+      }
+    } else {
+      console.warn('セッションIDがないため、データ保存をスキップしました');
+    }
+
+    setIsSaving(false);
     setPhase('results');
   };
 
@@ -63,8 +88,19 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
   };
 
   // 基本情報入力完了時
-  const handleBasicInfoComplete = (info) => {
+  const handleBasicInfoComplete = async (info) => {
     setBasicInfo(info);
+
+    // セッション作成
+    try {
+      const newSessionId = await createSession();
+      setSessionId(newSessionId);
+      console.log('セッション作成成功:', newSessionId);
+    } catch (error) {
+      console.error('セッション作成失敗:', error);
+      // エラーでも診断は続行可能
+    }
+
     setPhase('instruction');
   };
 
@@ -75,6 +111,8 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
     setType1Results(null);
     setType2Results(null);
     setSwipeHistory([]);
+    setSessionId(null);
+    setIsSaving(false);
   };
 
   if (phase === 'basicInfo') {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import DimensionSlider from './DimensionSlider';
-import { dimensionsData } from '../data/dimensionsData';
+import { dimensionsData } from '../../data/dimensionsData';
 
 const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => {
   const [showDebugText, setShowDebugText] = useState(false);
