@@ -6,6 +6,7 @@ import SimpleCardStack from './components/prototypes/SimpleCardStack';
 import VisualFeedbackCardStack from './components/prototypes/VisualFeedbackCardStack';
 import AssessmentStackA from './components/prototypes/AssessmentStackA';
 import AssessmentStackB from './components/prototypes/AssessmentStackB';
+import PurposeCarvingFlow from './components/prototypes/PurposeCarvingFlow';
 // Production (本番用)
 import KeywordSwipeStack from './components/production/KeywordSwipeStack';
 import ResultsDisplay from './components/production/ResultsDisplay';
@@ -13,6 +14,8 @@ import DimensionSlider from './components/production/DimensionSlider';
 import CreativeCompassResults from './components/production/CreativeCompassResults';
 import Type2DiagnosisFlow from './components/production/Type2DiagnosisFlow';
 import IntegratedDiagnosisFlow from './components/production/IntegratedDiagnosisFlow';
+// Admin (管理画面)
+import AdminDashboard from './components/admin/AdminDashboard';
 import { questions } from './data/questions';
 import { assessmentQuestions } from './data/assessmentQuestions';
 import { assessmentQuestionsC } from './data/assessmentQuestionsC';
@@ -24,6 +27,23 @@ import { generateDummySwipeHistory } from './utils/dummyData';
 import './App.css';
 
 function App() {
+  // ルーティング（簡易版）
+  const [currentRoute, setCurrentRoute] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentRoute(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  // 管理画面へのルーティング
+  if (currentRoute === '/admin') {
+    return <AdminDashboard />;
+  }
+
   const [selectedPattern, setSelectedPattern] = useState(null);
   const [isComplete, setIsComplete] = useState(false);
   const [swipeHistory, setSwipeHistory] = useState([]);
@@ -37,7 +57,8 @@ function App() {
         selectedPattern !== 'sliderTest' &&
         selectedPattern !== 'resultsTest' &&
         selectedPattern !== 'type2Diagnosis' &&
-        selectedPattern !== 'integratedDiagnosis') {
+        selectedPattern !== 'integratedDiagnosis' &&
+        selectedPattern !== 'purposeCarving') {
       document.body.classList.add('swipe-active');
     } else {
       document.body.classList.remove('swipe-active');
@@ -70,6 +91,13 @@ function App() {
     if (patternId === 'resultsTest') {
       setSelectedPattern('resultsTest');
       setIsComplete(false);
+      return;
+    }
+
+    // 管理画面モード
+    if (patternId === 'admin') {
+      window.history.pushState({}, '', '/admin');
+      setCurrentRoute('/admin');
       return;
     }
 
@@ -212,6 +240,54 @@ function App() {
           <Type2DiagnosisFlow
             onComplete={handleType2Complete}
             onBack={handleRestart}
+          />
+        )
+      ) : selectedPattern === 'purposeCarving' ? (
+        // Purpose Carving Flow
+        isComplete ? (
+          <div style={{
+            textAlign: 'center',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
+            alignItems: 'center'
+          }}>
+            <div style={{ fontSize: '48px' }}>✨</div>
+            <h2 style={{ fontSize: '32px', fontWeight: '800' }}>
+              Life Reflection完了！
+            </h2>
+            <p style={{ fontSize: '18px', color: 'rgba(255, 255, 255, 0.9)' }}>
+              あなたの人生の振り返りが完了しました
+            </p>
+            <button
+              onClick={handleRestart}
+              style={{
+                padding: '16px 32px',
+                fontSize: '18px',
+                fontWeight: '700',
+                backgroundColor: 'white',
+                color: '#374151',
+                border: 'none',
+                borderRadius: '16px',
+                cursor: 'pointer',
+                marginTop: '20px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              パターン選択に戻る
+            </button>
+          </div>
+        ) : (
+          <PurposeCarvingFlow
+            onComplete={(data) => {
+              console.log('Purpose Carving完了:', data);
+              setIsComplete(true);
+            }}
+            onSkip={() => {
+              console.log('Purpose Carvingスキップ');
+              setIsComplete(true);
+            }}
           />
         )
       ) : isComplete ? (

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchAfflatusResponses, saveInterviewMemo } from '../../services/supabase';
 import { dimensionsData } from '../../data/dimensionsData';
 import RichTextEditor from './RichTextEditor';
+import sampleData from '../../../scripts/sampleData.json';
 
 const AdminDashboard = () => {
   const [responses, setResponses] = useState([]);
@@ -10,6 +11,7 @@ const AdminDashboard = () => {
   const [showDebugText, setShowDebugText] = useState(false);
   const [memo, setMemo] = useState('');
   const [isSavingMemo, setIsSavingMemo] = useState(false);
+  const [usingSampleData, setUsingSampleData] = useState(false);
 
   useEffect(() => {
     loadResponses();
@@ -19,10 +21,21 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const data = await fetchAfflatusResponses();
-      setResponses(data);
+
+      // Supabaseが空の場合はサンプルデータを使用
+      if (!data || data.length === 0) {
+        console.log('📋 Supabaseが空のため、サンプルデータを使用します');
+        setResponses(sampleData);
+        setUsingSampleData(true);
+      } else {
+        setResponses(data);
+        setUsingSampleData(false);
+      }
     } catch (error) {
       console.error('データ取得エラー:', error);
-      alert('データの取得に失敗しました');
+      console.log('📋 エラーのため、サンプルデータを使用します');
+      setResponses(sampleData);
+      setUsingSampleData(true);
     } finally {
       setLoading(false);
     }
@@ -264,6 +277,19 @@ const AdminDashboard = () => {
             margin: 0
           }}>
             参加者数: {responses.length}件
+            {usingSampleData && (
+              <span style={{
+                marginLeft: '10px',
+                padding: '2px 8px',
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: '600'
+              }}>
+                📋 サンプルデータ使用中
+              </span>
+            )}
           </p>
         </div>
 

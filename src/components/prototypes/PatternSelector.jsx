@@ -80,6 +80,13 @@ const PatternSelector = ({ onSelectPattern }) => {
       category: 'デバッグ'
     },
     {
+      id: 'admin',
+      name: '🔧 管理画面',
+      description: '診断結果の閲覧・メモ編集・CSVエクスポート',
+      preview: '⚙️',
+      category: 'デバッグ'
+    },
+    {
       id: 'integratedDiagnosis',
       name: 'AFFLATUS創造性診断 ⭐NEW',
       description: 'タイプ1（直感判断）→ タイプ2（自己認識）の統合診断',
@@ -92,12 +99,20 @@ const PatternSelector = ({ onSelectPattern }) => {
       description: '8軸を1つずつ説明を読みながら自己評価',
       preview: '🎚️',
       category: '診断'
+    },
+    {
+      id: 'purposeCarving',
+      name: '📝 Purpose Carving ⭐NEW',
+      description: '人生振り返り→価値観選択→完了画面',
+      preview: '✨',
+      category: 'Purpose Carving'
     }
   ];
 
   const uiPatterns = patterns.filter(p => p.category === 'UIパターン');
   const assessmentPatterns = patterns.filter(p => p.category === 'アセスメント');
   const debugPatterns = patterns.filter(p => p.category === 'デバッグ');
+  const purposeCarvingPatterns = patterns.filter(p => p.category === 'Purpose Carving');
   const diagnosisPatterns = patterns.filter(p => p.category === '診断');
 
   return (
@@ -151,6 +166,32 @@ const PatternSelector = ({ onSelectPattern }) => {
                     pattern.preview
                   )}
                 </div>
+                <h3>{pattern.name}</h3>
+                <p>{pattern.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Purpose Carving */}
+      {purposeCarvingPatterns.length > 0 && (
+        <div className="pattern-section">
+          <h2 style={{ color: 'white', fontSize: '20px', marginBottom: '16px', marginTop: '32px' }}>Purpose Carving（試作）</h2>
+          <div className="pattern-grid">
+            {purposeCarvingPatterns.map((pattern) => (
+              <button
+                key={pattern.id}
+                className="pattern-card"
+                onClick={() => onSelectPattern(pattern.id)}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  borderColor: 'rgba(251, 191, 36, 0.6)',
+                  borderWidth: '2px',
+                  color: '#1f2937'
+                }}
+              >
+                <div className="pattern-preview">{pattern.preview}</div>
                 <h3>{pattern.name}</h3>
                 <p>{pattern.description}</p>
               </button>
