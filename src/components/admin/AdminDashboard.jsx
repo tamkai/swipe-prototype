@@ -13,6 +13,21 @@ const AdminDashboard = () => {
   const [isSavingMemo, setIsSavingMemo] = useState(false);
   const [usingSampleData, setUsingSampleData] = useState(false);
 
+  // 元データを保持（変更検知用）
+  const [originalPurpose, setOriginalPurpose] = useState('');
+  const [originalValues, setOriginalValues] = useState(['', '', '']);
+
+  // selectedParticipantが変わるたびに元データを更新
+  useEffect(() => {
+    if (selectedParticipant) {
+      const purpose = selectedParticipant.personal_purpose?.purpose || '';
+      const values = selectedParticipant.life_reflection?.values || ['', '', ''];
+
+      setOriginalPurpose(purpose);
+      setOriginalValues(values);
+    }
+  }, [selectedParticipant?.id]); // IDで依存関係を明示
+
   useEffect(() => {
     loadResponses();
   }, []);
@@ -25,7 +40,48 @@ const AdminDashboard = () => {
       // Supabaseが空の場合はサンプルデータを使用
       if (!data || data.length === 0) {
         console.log('📋 Supabaseが空のため、サンプルデータを使用します');
-        setResponses(sampleData);
+
+        // サンプルデータのlife_reflectionを配列形式に変換
+        const normalizedSampleData = sampleData.map(participant => {
+          if (participant.life_reflection) {
+            const lr = participant.life_reflection;
+            return {
+              ...participant,
+              life_reflection: {
+                age_0_10: [
+                  lr.age_0_10_item1,
+                  lr.age_0_10_item2,
+                  lr.age_0_10_item3,
+                  lr.age_0_10_item4,
+                  lr.age_0_10_item5
+                ].filter(item => item && item.trim()),
+                age_11_20: [
+                  lr.age_11_20_item1,
+                  lr.age_11_20_item2,
+                  lr.age_11_20_item3,
+                  lr.age_11_20_item4,
+                  lr.age_11_20_item5
+                ].filter(item => item && item.trim()),
+                age_21_now: [
+                  lr.age_21_now_item1,
+                  lr.age_21_now_item2,
+                  lr.age_21_now_item3,
+                  lr.age_21_now_item4,
+                  lr.age_21_now_item5
+                ].filter(item => item && item.trim()),
+                careerReason: lr.career_reason,
+                values: [
+                  participant.personal_values?.value1,
+                  participant.personal_values?.value2,
+                  participant.personal_values?.value3
+                ].filter(item => item && item.trim())
+              }
+            };
+          }
+          return participant;
+        });
+
+        setResponses(normalizedSampleData);
         setUsingSampleData(true);
       } else {
         setResponses(data);
@@ -34,7 +90,48 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('データ取得エラー:', error);
       console.log('📋 エラーのため、サンプルデータを使用します');
-      setResponses(sampleData);
+
+      // サンプルデータのlife_reflectionを配列形式に変換
+      const normalizedSampleData = sampleData.map(participant => {
+        if (participant.life_reflection) {
+          const lr = participant.life_reflection;
+          return {
+            ...participant,
+            life_reflection: {
+              age_0_10: [
+                lr.age_0_10_item1,
+                lr.age_0_10_item2,
+                lr.age_0_10_item3,
+                lr.age_0_10_item4,
+                lr.age_0_10_item5
+              ].filter(item => item && item.trim()),
+              age_11_20: [
+                lr.age_11_20_item1,
+                lr.age_11_20_item2,
+                lr.age_11_20_item3,
+                lr.age_11_20_item4,
+                lr.age_11_20_item5
+              ].filter(item => item && item.trim()),
+              age_21_now: [
+                lr.age_21_now_item1,
+                lr.age_21_now_item2,
+                lr.age_21_now_item3,
+                lr.age_21_now_item4,
+                lr.age_21_now_item5
+              ].filter(item => item && item.trim()),
+              careerReason: lr.career_reason,
+              values: [
+                participant.personal_values?.value1,
+                participant.personal_values?.value2,
+                participant.personal_values?.value3
+              ].filter(item => item && item.trim())
+            }
+          };
+        }
+        return participant;
+      });
+
+      setResponses(normalizedSampleData);
       setUsingSampleData(true);
     } finally {
       setLoading(false);
@@ -46,11 +143,62 @@ const AdminDashboard = () => {
     setSelectedParticipant(participant);
     setMemo(participant.interview_memo || '');
     setShowDebugText(false);
+
+    // 元データを保存（変更検知用）
+    setOriginalPurpose(participant.personal_purpose?.purpose || '');
+    setOriginalValues(participant.life_reflection?.values || ['', '', '']);
+  };
+
+  // パーパス更新
+  const handleUpdatePurpose = async (participant) => {
+    if (usingSampleData) {
+      alert('サンプルデータのため、更新できません');
+      return;
+    }
+
+    try {
+      const { savePersonalPurpose } = await import('../../services/supabase');
+      await savePersonalPurpose(participant.id, participant.personal_purpose?.purpose);
+      alert('パーパスを更新しました');
+      // 元データを更新
+      setOriginalPurpose(participant.personal_purpose?.purpose || '');
+      // データを再読み込み
+      await loadResponses();
+    } catch (error) {
+      console.error('パーパス更新エラー:', error);
+      alert('パーパスの更新に失敗しました');
+    }
+  };
+
+  // 価値観更新
+  const handleUpdateValues = async (participant) => {
+    if (usingSampleData) {
+      alert('サンプルデータのため、更新できません');
+      return;
+    }
+
+    try {
+      const { savePersonalValues } = await import('../../services/supabase');
+      await savePersonalValues(participant.id, participant.life_reflection?.values || []);
+      alert('価値観を更新しました');
+      // 元データを更新
+      setOriginalValues(participant.life_reflection?.values || ['', '', '']);
+      // データを再読み込み
+      await loadResponses();
+    } catch (error) {
+      console.error('価値観更新エラー:', error);
+      alert('価値観の更新に失敗しました');
+    }
   };
 
   // メモを保存
   const handleSaveMemo = async () => {
     if (!selectedParticipant) return;
+
+    if (usingSampleData) {
+      alert('サンプルデータのため、更新できません');
+      return;
+    }
 
     try {
       setIsSavingMemo(true);
@@ -71,15 +219,36 @@ const AdminDashboard = () => {
     }
   };
 
-  // トップ3の軸を計算
-  const getTop3Dimensions = (participant, type) => {
-    const scores = dimensionsData.map((dimension) => ({
-      dimension: dimension.dimension,
-      id: dimension.id,
-      value: participant[`${type}_${dimension.id}`]
-    }));
+  // トップ3の極を計算（16極から3つ選出）
+  const getTop3Poles = (participant, type) => {
+    const poles = [];
 
-    return scores.sort((a, b) => b.value - a.value).slice(0, 3);
+    dimensionsData.forEach((dimension) => {
+      const value = participant[`${type}_${dimension.id}`];
+
+      // 左側の極（pole_a）への強度
+      if (value <= 0.5) {
+        const strength = (0.5 - value) * 2; // 0.0 = 100%, 0.5 = 0%
+        poles.push({
+          poleName: dimension.pole_a,
+          axis: dimension.dimension,
+          strength: strength * 100,
+          value: value
+        });
+      } else {
+        // 右側の極（pole_b）への強度
+        const strength = (value - 0.5) * 2; // 0.5 = 0%, 1.0 = 100%
+        poles.push({
+          poleName: dimension.pole_b,
+          axis: dimension.dimension,
+          strength: strength * 100,
+          value: value
+        });
+      }
+    });
+
+    // 強度の高い順にソートして上位3つを返す
+    return poles.sort((a, b) => b.strength - a.strength).slice(0, 3);
   };
 
   // ギャップの大きい軸を計算
@@ -508,20 +677,205 @@ const AdminDashboard = () => {
                 <p style={{
                   fontSize: '16px',
                   color: '#6b7280',
-                  marginBottom: '10px'
+                  marginBottom: '20px'
                 }}>
                   {selectedParticipant.title}
                 </p>
               )}
-              <p style={{
-                fontSize: '14px',
-                color: '#9ca3af',
-                marginBottom: '30px'
+
+              {/* パーパス（全幅・最優先） */}
+              <div style={{
+                padding: '15px 20px',
+                backgroundColor: '#fef3c7',
+                borderRadius: '12px',
+                border: '2px solid #f59e0b',
+                marginBottom: '15px',
+                position: 'relative'
               }}>
-                創造体験レベル: {Math.round(selectedParticipant.creative_experience * 100)}%
-                {' ・ '}
-                診断日: {new Date(selectedParticipant.created_at).toLocaleDateString('ja-JP')}
-              </p>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '6px'
+                }}>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#92400e',
+                    fontWeight: '600'
+                  }}>
+                    個人のパーパス
+                  </div>
+                  <button
+                    onClick={() => handleUpdatePurpose(selectedParticipant)}
+                    disabled={(() => {
+                      const currentPurpose = selectedParticipant.personal_purpose?.purpose || '';
+                      const isDisabled = usingSampleData || currentPurpose === originalPurpose;
+                      return isDisabled;
+                    })()}
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      backgroundColor: (usingSampleData || (selectedParticipant.personal_purpose?.purpose || '') === originalPurpose) ? '#d1d5db' : '#f59e0b',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: (usingSampleData || (selectedParticipant.personal_purpose?.purpose || '') === originalPurpose) ? 'not-allowed' : 'pointer',
+                      opacity: (usingSampleData || (selectedParticipant.personal_purpose?.purpose || '') === originalPurpose) ? 0.5 : 1
+                    }}
+                  >
+                    更新
+                  </button>
+                </div>
+                <textarea
+                  value={selectedParticipant.personal_purpose?.purpose || ''}
+                  onChange={(e) => {
+                    const updatedParticipant = {
+                      ...selectedParticipant,
+                      personal_purpose: {
+                        ...selectedParticipant.personal_purpose,
+                        purpose: e.target.value
+                      }
+                    };
+                    setSelectedParticipant(updatedParticipant);
+                  }}
+                  placeholder="パーパスを入力してください"
+                  style={{
+                    width: '100%',
+                    minHeight: '40px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#92400e',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    resize: 'none',
+                    fontFamily: 'inherit',
+                    lineHeight: '1.4'
+                  }}
+                />
+              </div>
+
+              {/* 価値観（全幅） */}
+              <div style={{
+                padding: '15px 20px',
+                backgroundColor: '#f0fdf4',
+                borderRadius: '12px',
+                border: '2px solid #10b981',
+                marginBottom: '15px',
+                position: 'relative'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '10px'
+                }}>
+                  <div style={{
+                    fontSize: '13px',
+                    color: '#065f46',
+                    fontWeight: '600'
+                  }}>
+                    大切にしている価値観
+                  </div>
+                  <button
+                    onClick={() => handleUpdateValues(selectedParticipant)}
+                    disabled={(() => {
+                      const currentValues = selectedParticipant.life_reflection?.values || ['', '', ''];
+                      const isDisabled = usingSampleData || JSON.stringify(currentValues) === JSON.stringify(originalValues);
+                      return isDisabled;
+                    })()}
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      backgroundColor: (usingSampleData || JSON.stringify(selectedParticipant.life_reflection?.values || ['', '', '']) === JSON.stringify(originalValues)) ? '#d1d5db' : '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: (usingSampleData || JSON.stringify(selectedParticipant.life_reflection?.values || ['', '', '']) === JSON.stringify(originalValues)) ? 'not-allowed' : 'pointer',
+                      opacity: (usingSampleData || JSON.stringify(selectedParticipant.life_reflection?.values || ['', '', '']) === JSON.stringify(originalValues)) ? 0.5 : 1
+                    }}
+                  >
+                    更新
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {[0, 1, 2].map((index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      value={selectedParticipant.life_reflection?.values?.[index] || ''}
+                      onChange={(e) => {
+                        const updatedValues = [...(selectedParticipant.life_reflection?.values || ['', '', ''])];
+                        updatedValues[index] = e.target.value;
+                        const updatedParticipant = {
+                          ...selectedParticipant,
+                          life_reflection: {
+                            ...selectedParticipant.life_reflection,
+                            values: updatedValues
+                          }
+                        };
+                        setSelectedParticipant(updatedParticipant);
+                      }}
+                      placeholder={`価値観 ${index + 1}`}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#065f46',
+                        backgroundColor: 'white',
+                        border: '1px solid #10b981',
+                        borderRadius: '6px',
+                        outline: 'none'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* 創造体験レベル（1行・コンパクト） */}
+              <div style={{
+                padding: '12px 16px',
+                backgroundColor: '#f0f9ff',
+                borderRadius: '8px',
+                border: '1px solid #3b82f6',
+                marginBottom: '15px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <span style={{
+                  fontSize: '13px',
+                  color: '#1e40af',
+                  fontWeight: '600'
+                }}>
+                  創造体験レベル（自己申告）:
+                </span>
+                <span style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  color: '#1e40af'
+                }}>
+                  {Math.round(selectedParticipant.creative_experience * 100)}%
+                </span>
+                <span style={{
+                  fontSize: '12px',
+                  color: '#6b7280'
+                }}>
+                  {selectedParticipant.creative_experience < 0.3 && '（少ない）'}
+                  {selectedParticipant.creative_experience >= 0.3 && selectedParticipant.creative_experience <= 0.7 && '（中程度）'}
+                  {selectedParticipant.creative_experience > 0.7 && '（豊富）'}
+                </span>
+                <span style={{
+                  marginLeft: 'auto',
+                  fontSize: '12px',
+                  color: '#9ca3af'
+                }}>
+                  診断日: {new Date(selectedParticipant.created_at).toLocaleDateString('ja-JP')}
+                </span>
+              </div>
 
               {/* トップ3とギャップの表示 */}
               <div style={{
@@ -542,15 +896,15 @@ const AdminDashboard = () => {
                     fontWeight: '600',
                     marginBottom: '8px'
                   }}>
-                    Type1 Top3
+                    Type1 極TOP3
                   </div>
-                  {getTop3Dimensions(selectedParticipant, 'type1').map((item, index) => (
+                  {getTop3Poles(selectedParticipant, 'type1').map((item, index) => (
                     <div key={index} style={{
                       fontSize: '13px',
                       color: '#1f2937',
                       marginBottom: '4px'
                     }}>
-                      {index + 1}. {item.dimension} ({Math.round(item.value * 100)}%)
+                      {index + 1}. {item.poleName} ({Math.round(item.strength)}%)
                     </div>
                   ))}
                 </div>
@@ -597,15 +951,15 @@ const AdminDashboard = () => {
                     fontWeight: '600',
                     marginBottom: '8px'
                   }}>
-                    Type2 Top3
+                    Type2 極TOP3
                   </div>
-                  {getTop3Dimensions(selectedParticipant, 'type2').map((item, index) => (
+                  {getTop3Poles(selectedParticipant, 'type2').map((item, index) => (
                     <div key={index} style={{
                       fontSize: '13px',
                       color: '#1f2937',
                       marginBottom: '4px'
                     }}>
-                      {index + 1}. {item.dimension} ({Math.round(item.value * 100)}%)
+                      {index + 1}. {item.poleName} ({Math.round(item.strength)}%)
                     </div>
                   ))}
                 </div>
@@ -667,10 +1021,22 @@ const AdminDashboard = () => {
                 </thead>
                 <tbody>
                   {dimensionsData.map((dimension) => {
-                    const type1 = Math.round(selectedParticipant[`type1_${dimension.id}`] * 100);
-                    const type2 = Math.round(selectedParticipant[`type2_${dimension.id}`] * 100);
+                    const type1Value = selectedParticipant[`type1_${dimension.id}`];
+                    const type2Value = selectedParticipant[`type2_${dimension.id}`];
+                    const type1 = Math.round(type1Value * 100);
+                    const type2 = Math.round(type2Value * 100);
                     const gap = Math.abs(type1 - type2);
                     const hasLargeGap = gap >= 30;
+
+                    // Type1の極を判定
+                    const type1Pole = type1Value <= 0.5 ? dimension.pole_a : dimension.pole_b;
+                    const type1Strength = Math.abs(type1Value - 0.5) * 2 * 100; // 0-100%
+                    const type1IsStrong = type1Strength >= 40; // 40%以上で強い極とみなす
+
+                    // Type2の極を判定
+                    const type2Pole = type2Value <= 0.5 ? dimension.pole_a : dimension.pole_b;
+                    const type2Strength = Math.abs(type2Value - 0.5) * 2 * 100;
+                    const type2IsStrong = type2Strength >= 40;
 
                     return (
                       <tr
@@ -691,17 +1057,19 @@ const AdminDashboard = () => {
                           padding: '12px',
                           textAlign: 'center',
                           color: '#3b82f6',
-                          fontWeight: '600'
+                          fontWeight: '600',
+                          backgroundColor: type1IsStrong ? '#dbeafe' : 'transparent'
                         }}>
-                          {type1}%
+                          {type1}% ({type1Pole})
                         </td>
                         <td style={{
                           padding: '12px',
                           textAlign: 'center',
                           color: '#10b981',
-                          fontWeight: '600'
+                          fontWeight: '600',
+                          backgroundColor: type2IsStrong ? '#d1fae5' : 'transparent'
                         }}>
-                          {type2}%
+                          {type2}% ({type2Pole})
                         </td>
                         <td style={{
                           padding: '12px',
@@ -727,8 +1095,8 @@ const AdminDashboard = () => {
             }}>
               {/* Life Reflection */}
               <div style={{
-                flex: '0 0 35%',
-                padding: '40px',
+                flex: '0 0 40%',
+                padding: '30px 40px',
                 overflowY: 'auto',
                 borderBottom: '1px solid #e5e7eb'
               }}>
@@ -736,78 +1104,78 @@ const AdminDashboard = () => {
                   fontSize: '18px',
                   fontWeight: '700',
                   color: '#1f2937',
-                  marginBottom: '15px'
+                  marginBottom: '12px'
                 }}>
                   Life Reflection
                 </h3>
 
                 {selectedParticipant.life_reflection ? (
-                  <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
+                  <div style={{ fontSize: '12px', lineHeight: '1.5' }}>
                     {selectedParticipant.life_reflection.age_0_10?.length > 0 && (
-                      <div style={{ marginBottom: '15px' }}>
+                      <div style={{ marginBottom: '12px' }}>
                         <h4 style={{
-                          fontSize: '13px',
+                          fontSize: '12px',
                           fontWeight: '600',
                           color: '#4b5563',
-                          marginBottom: '8px'
+                          marginBottom: '5px'
                         }}>
                           0〜10歳
                         </h4>
-                        <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151' }}>
+                        <ul style={{ margin: 0, paddingLeft: '18px', color: '#374151' }}>
                           {selectedParticipant.life_reflection.age_0_10.map((item, index) => (
-                            item.trim() && <li key={index} style={{ marginBottom: '3px' }}>{item}</li>
+                            item.trim() && <li key={index} style={{ marginBottom: '2px' }}>{item}</li>
                           ))}
                         </ul>
                       </div>
                     )}
 
                     {selectedParticipant.life_reflection.age_11_20?.length > 0 && (
-                      <div style={{ marginBottom: '15px' }}>
+                      <div style={{ marginBottom: '12px' }}>
                         <h4 style={{
-                          fontSize: '13px',
+                          fontSize: '12px',
                           fontWeight: '600',
                           color: '#4b5563',
-                          marginBottom: '8px'
+                          marginBottom: '5px'
                         }}>
                           11〜20歳
                         </h4>
-                        <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151' }}>
+                        <ul style={{ margin: 0, paddingLeft: '18px', color: '#374151' }}>
                           {selectedParticipant.life_reflection.age_11_20.map((item, index) => (
-                            item.trim() && <li key={index} style={{ marginBottom: '3px' }}>{item}</li>
+                            item.trim() && <li key={index} style={{ marginBottom: '2px' }}>{item}</li>
                           ))}
                         </ul>
                       </div>
                     )}
 
                     {selectedParticipant.life_reflection.age_21_now?.length > 0 && (
-                      <div style={{ marginBottom: '15px' }}>
+                      <div style={{ marginBottom: '12px' }}>
                         <h4 style={{
-                          fontSize: '13px',
+                          fontSize: '12px',
                           fontWeight: '600',
                           color: '#4b5563',
-                          marginBottom: '8px'
+                          marginBottom: '5px'
                         }}>
                           21歳〜現在
                         </h4>
-                        <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151' }}>
+                        <ul style={{ margin: 0, paddingLeft: '18px', color: '#374151' }}>
                           {selectedParticipant.life_reflection.age_21_now.map((item, index) => (
-                            item.trim() && <li key={index} style={{ marginBottom: '3px' }}>{item}</li>
+                            item.trim() && <li key={index} style={{ marginBottom: '2px' }}>{item}</li>
                           ))}
                         </ul>
                       </div>
                     )}
 
                     {selectedParticipant.life_reflection.careerReason && (
-                      <div style={{ marginBottom: '15px' }}>
+                      <div style={{ marginBottom: '12px' }}>
                         <h4 style={{
-                          fontSize: '13px',
+                          fontSize: '12px',
                           fontWeight: '600',
                           color: '#4b5563',
-                          marginBottom: '8px'
+                          marginBottom: '5px'
                         }}>
                           現在のキャリアを選んだ理由
                         </h4>
-                        <p style={{ margin: 0, color: '#374151' }}>
+                        <p style={{ margin: 0, color: '#374151', lineHeight: '1.5' }}>
                           {selectedParticipant.life_reflection.careerReason}
                         </p>
                       </div>
@@ -816,23 +1184,23 @@ const AdminDashboard = () => {
                     {selectedParticipant.life_reflection.values?.length > 0 && (
                       <div>
                         <h4 style={{
-                          fontSize: '13px',
+                          fontSize: '12px',
                           fontWeight: '600',
                           color: '#4b5563',
-                          marginBottom: '8px'
+                          marginBottom: '5px'
                         }}>
                           大切にしている価値観
                         </h4>
-                        <ul style={{ margin: 0, paddingLeft: '20px', color: '#374151' }}>
+                        <ul style={{ margin: 0, paddingLeft: '18px', color: '#374151' }}>
                           {selectedParticipant.life_reflection.values.map((value, index) => (
-                            value.trim() && <li key={index} style={{ marginBottom: '3px' }}>{value}</li>
+                            value.trim() && <li key={index} style={{ marginBottom: '2px' }}>{value}</li>
                           ))}
                         </ul>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p style={{ color: '#9ca3af', fontSize: '13px' }}>
+                  <p style={{ color: '#9ca3af', fontSize: '12px' }}>
                     Life Reflectionのデータがありません
                   </p>
                 )}
@@ -840,8 +1208,8 @@ const AdminDashboard = () => {
 
               {/* インタビューメモ */}
               <div style={{
-                flex: 1,
-                padding: '40px',
+                flex: '0 0 30%',
+                padding: '30px 40px',
                 overflowY: 'auto',
                 borderBottom: '1px solid #e5e7eb',
                 backgroundColor: '#fefce8'
@@ -850,7 +1218,7 @@ const AdminDashboard = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '15px'
+                  marginBottom: '12px'
                 }}>
                   <h3 style={{
                     fontSize: '18px',

@@ -7,11 +7,12 @@
  */
 export const calculateScores = (swipeHistory) => {
   // 8次元の初期化
+  // pole_a: 右側（1.0に近い）、pole_b: 左側（0.0に近い）
   const dimensions = {
     '動機': { score: 0, count: 0, pole_a: '内発', pole_b: '目的整合' },
     '生成': { score: 0, count: 0, pole_a: '発散', pole_b: '収束' },
     '進行': { score: 0, count: 0, pole_a: '柔軟', pole_b: '粘り' },
-    '価値創出': { score: 0, count: 0, pole_a: '改善', pole_b: '発明' },
+    '価値創出': { score: 0, count: 0, pole_a: '発明', pole_b: '改善' },  // ← 修正: pole_aとpole_bを入れ替え
     '表現': { score: 0, count: 0, pole_a: '自己表現', pole_b: '共感価値' },
     '思考': { score: 0, count: 0, pole_a: '抽象', pole_b: '具体' },
     '実行': { score: 0, count: 0, pole_a: '即興', pole_b: '設計' },
