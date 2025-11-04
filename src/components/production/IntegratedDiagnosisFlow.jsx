@@ -1,20 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import BasicInfoInput from './BasicInfoInput';
 import KeywordSwipeStack from './KeywordSwipeStack';
 import Type2DiagnosisFlow from './Type2DiagnosisFlow';
 import CreativeCompassResults from './CreativeCompassResults';
-import { keywordSwipeData } from '../../data/keywordSwipeData';
+import PurposeCarvingFlow from '../prototypes/PurposeCarvingFlow';
+import { generateRandomKeywordSet } from '../../utils/keywordSelector';
 import { calculateScores } from '../../utils/scoreCalculator';
 import { createSession, saveAfflatusResponse } from '../../services/supabase';
 
 const IntegratedDiagnosisFlow = ({ onBack }) => {
-  const [phase, setPhase] = useState('basicInfo'); // basicInfo, instruction, type1, type2, results
+  const [phase, setPhase] = useState('basicInfo'); // basicInfo, lifeReflection, instruction, type1, type2, results
   const [basicInfo, setBasicInfo] = useState(null);
+  const [lifeReflectionData, setLifeReflectionData] = useState(null);
   const [type1Results, setType1Results] = useState(null);
   const [type2Results, setType2Results] = useState(null);
   const [swipeHistory, setSwipeHistory] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [keywords, setKeywords] = useState([]);
+  const [creativeExperience, setCreativeExperience] = useState(0.5);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasMovedSlider, setHasMovedSlider] = useState(false);
+
+  // キーワードセットをランダム生成
+  useEffect(() => {
+    const loadKeywords = async () => {
+      try {
+        const response = await fetch('/keyword-candidates.csv');
+        const csvText = await response.text();
+        const randomKeywords = generateRandomKeywordSet(csvText, 4);
+        setKeywords(randomKeywords);
+        console.log('ランダムキーワード生成完了:', randomKeywords);
+      } catch (error) {
+        console.error('キーワード読み込みエラー:', error);
+        // フォールバックとして空配列を設定（エラーハンドリング）
+        setKeywords([]);
+      }
+    };
+
+    loadKeywords();
+  }, []);
 
   // フェーズ変更時に画面上部にスクロール
   useEffect(() => {
@@ -84,6 +109,12 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
 
   // インストラクション画面から診断開始
   const handleStartDiagnosis = () => {
+    // creativeExperienceを含めて基本情報を更新
+    const updatedInfo = {
+      ...basicInfo,
+      creativeExperience
+    };
+    setBasicInfo(updatedInfo);
     setPhase('type1');
   };
 
@@ -101,8 +132,28 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
       // エラーでも診断は続行可能
     }
 
+    setPhase('lifeReflection');
+  };
+
+  // Life Reflection完了時
+  const handleLifeReflectionComplete = (data) => {
+    setLifeReflectionData(data);
+    // creativeExperienceを含めて基本情報を更新
+    const completeInfo = {
+      ...basicInfo,
+      creativeExperience,
+      lifeReflection: data
+    };
+    setBasicInfo(completeInfo);
     setPhase('instruction');
   };
+
+  // スライダーの色を計算
+  const getColorForValue = useCallback((val) => {
+    if (val >= 0.4 && val <= 0.6) return '#9ca3af'; // グレー
+    else if (val < 0.4) return '#3b82f6';            // 青
+    else return '#ef4444';                           // 赤
+  }, []);
 
   // 再スタート
   const handleRestart = () => {
@@ -117,6 +168,14 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
 
   if (phase === 'basicInfo') {
     return <BasicInfoInput onComplete={handleBasicInfoComplete} />;
+  }
+
+  if (phase === 'lifeReflection') {
+    return (
+      <PurposeCarvingFlow
+        onComplete={handleLifeReflectionComplete}
+      />
+    );
   }
 
   if (phase === 'instruction') {
@@ -184,7 +243,7 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
 
         <div style={{
           width: '100%',
-          maxWidth: '600px',
+          maxWidth: '800px',
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
           borderRadius: '20px',
           padding: '32px 28px',
@@ -262,6 +321,135 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
             </div>
           </div>
 
+          {/* 区切り線 */}
+          <div style={{
+            height: '1px',
+            backgroundColor: '#e5e7eb',
+            margin: '32px 0'
+          }} />
+
+          {/* 創造性についての質問 */}
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{
+              fontSize: '18px',
+              fontWeight: '700',
+              color: '#1f2937',
+              marginBottom: '20px'
+            }}>
+              【創造性についてお聞きします】
+            </h2>
+
+            <p style={{
+              fontSize: '16px',
+              color: '#374151',
+              lineHeight: '1.8',
+              marginBottom: '10px',
+              fontWeight: '500'
+            }}>
+              「正解がわからないことでも、試行錯誤しながら形にする」
+            </p>
+
+            <p style={{
+              fontSize: '16px',
+              color: '#374151',
+              lineHeight: '1.8',
+              marginBottom: '20px'
+            }}>
+              そんな経験を、今までどれくらいしてきたと思いますか？
+            </p>
+
+            <div style={{
+              backgroundColor: '#f9fafb',
+              padding: '16px',
+              borderRadius: '12px',
+              marginBottom: '30px'
+            }}>
+              <p style={{
+                fontSize: '14px',
+                color: '#6b7280',
+                lineHeight: '1.7',
+                margin: 0
+              }}>
+                ※大小は問いません。小さな工夫でも、試行錯誤した経験でもOKです。
+                <br />
+                ※創造性には色々な形があります。この後の診断で、あなたらしい創造性のスタイルがわかります。
+              </p>
+            </div>
+
+            {/* スライダー（600px中央配置） */}
+            <div style={{
+              width: '100%',
+              maxWidth: '600px',
+              margin: '0 auto',
+              paddingTop: '20px'
+            }}>
+              <div style={{
+                position: 'relative',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                {/* カスタムつまみ */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `calc(${creativeExperience * 100}% - 14px)`,
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    backgroundColor: getColorForValue(creativeExperience),
+                    border: '3px solid white',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                    pointerEvents: 'none',
+                    transition: 'transform 0.15s ease',
+                    transform: isDragging ? 'scale(1.1)' : 'scale(1)',
+                    zIndex: 20
+                  }}
+                />
+
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={creativeExperience * 100}
+                  onChange={(e) => {
+                    setCreativeExperience(e.target.value / 100);
+                    setHasMovedSlider(true);
+                  }}
+                  onMouseDown={() => setIsDragging(true)}
+                  onMouseUp={() => setIsDragging(false)}
+                  onTouchStart={() => setIsDragging(true)}
+                  onTouchEnd={() => setIsDragging(false)}
+                  className="creative-experience-slider"
+                  style={{
+                    width: '100%',
+                    height: '8px',
+                    background: 'linear-gradient(to right, #3b82f6 0%, #9ca3af 50%, #ef4444 100%)',
+                    borderRadius: '4px',
+                    outline: 'none',
+                    WebkitAppearance: 'none',
+                    appearance: 'none',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    zIndex: 10
+                  }}
+                />
+              </div>
+
+              {/* ラベル */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: '12px',
+                fontSize: '14px',
+                color: '#6b7280'
+              }}>
+                <span>少ない</span>
+                <span>多い</span>
+              </div>
+            </div>
+          </div>
+
           <div style={{
             display: 'flex',
             gap: '12px'
@@ -285,22 +473,47 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
             </button>
             <button
               onClick={handleStartDiagnosis}
+              disabled={!hasMovedSlider}
               style={{
                 flex: 2,
                 padding: '16px 24px',
                 fontSize: '18px',
                 fontWeight: '700',
-                backgroundColor: '#374151',
+                backgroundColor: hasMovedSlider ? '#374151' : '#d1d5db',
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                cursor: hasMovedSlider ? 'pointer' : 'not-allowed',
+                boxShadow: hasMovedSlider ? '0 4px 12px rgba(0, 0, 0, 0.2)' : 'none',
+                opacity: hasMovedSlider ? 1 : 0.6,
+                transition: 'all 0.2s'
               }}
             >
               診断開始 →
             </button>
           </div>
+
+          {/* スライダーのスタイル */}
+          <style>{`
+            .creative-experience-slider::-webkit-slider-thumb {
+              opacity: 0;
+              width: 28px;
+              height: 28px;
+              background: transparent;
+              border: none;
+              cursor: pointer;
+              -webkit-appearance: none;
+            }
+
+            .creative-experience-slider::-moz-range-thumb {
+              opacity: 0;
+              width: 28px;
+              height: 28px;
+              background: transparent;
+              border: none;
+              cursor: pointer;
+            }
+          `}</style>
 
           {/* デバッグ用ショートカット */}
           <div style={{
@@ -400,6 +613,23 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
   }
 
   if (phase === 'type1') {
+    // キーワード読み込み中
+    if (keywords.length === 0) {
+      return (
+        <div style={{
+          width: '100%',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '18px'
+        }}>
+          キーワードを読み込み中...
+        </div>
+      );
+    }
+
     return (
       <div style={{
         width: '100%',
@@ -410,14 +640,12 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
         justifyContent: 'center',
         position: 'relative'
       }}>
-        <div className="card-container">
-          <KeywordSwipeStack
-            keywords={keywordSwipeData}
-            onComplete={handleType1Complete}
-            onBack={() => setPhase('instruction')}
-            isIntegratedMode={true}
-          />
-        </div>
+        <KeywordSwipeStack
+          keywords={keywords}
+          onComplete={handleType1Complete}
+          onBack={() => setPhase('instruction')}
+          isIntegratedMode={true}
+        />
       </div>
     );
   }

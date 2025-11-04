@@ -16,17 +16,18 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
 
     console.log(`${directionLabels[direction]}:`, item);
 
-    // スワイプ履歴を記録
-    setSwipeHistory(prev => [
-      ...prev,
-      {
-        keyword: item.keyword,
-        dimension: item.dimension,
-        pole: item.pole,
-        direction,
-        timestamp: new Date().toISOString()
-      }
-    ]);
+    // スワイプ履歴を記録（選択したキーワードと比較対象の両方を記録）
+    const newHistoryItem = {
+      keyword: item.keyword,
+      compareTo: item.compareTo, // 比較対象のキーワードを追加
+      dimension: item.dimension,
+      pole: item.pole,
+      direction,
+      timestamp: new Date().toISOString()
+    };
+
+    const updatedHistory = [...swipeHistory, newHistoryItem];
+    setSwipeHistory(updatedHistory);
 
     // フィードバック表示
     const currentFeedback = directionLabels[direction];
@@ -37,8 +38,8 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
     const delay = direction === 'neither' ? 300 : 250;
     setTimeout(() => {
       if (currentIndex + 1 >= keywords.length) {
-        // 全て完了
-        onComplete(swipeHistory);
+        // 全て完了（最新の履歴を渡す）
+        onComplete(updatedHistory);
       } else {
         // フィードバックを非表示にしてから次のカードへ
         setShowFeedback(false);
@@ -69,7 +70,7 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
         {/* プログレスバー（0ページ目） */}
         <div style={{
           width: '100%',
-          maxWidth: '600px',
+          maxWidth: '800px',
           marginBottom: '30px',
           marginTop: '40px'
         }}>
@@ -113,7 +114,7 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
         {/* インストラクションカード */}
         <div style={{
           width: '100%',
-          maxWidth: '600px',
+          maxWidth: '800px',
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
           borderRadius: '20px',
           padding: '40px',
@@ -162,7 +163,7 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
         {/* ナビゲーションボタン */}
         <div style={{
           width: '100%',
-          maxWidth: '600px',
+          maxWidth: '800px',
           display: 'flex',
           gap: '16px',
           marginTop: '40px'
@@ -231,59 +232,60 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* 次のカードをプレビュー表示 */}
-      {currentIndex + 1 < keywords.length && (
-        <div
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'white',
-            borderRadius: '20px',
-            boxShadow: '0 5px 15px rgba(0, 0, 0, 0.1)',
-            transform: 'scale(0.95)',
-            opacity: 0.5,
-          }}
-        />
-      )}
-
-      {/* 現在のカード */}
-      <KeywordSwipeCard
-        key={currentIndex}
-        item={keywords[currentIndex]}
-        onSwipe={handleSwipe}
-      />
-
-      {/* フィードバック表示（カードの裏） */}
-      {showFeedback && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none',
-            zIndex: 1
-          }}
-        >
+    <div className="card-container">
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        {/* 次のカードをプレビュー表示 */}
+        {currentIndex + 1 < keywords.length && (
           <div
-            key={feedbackText}
             style={{
-              fontSize: '28px',
-              fontWeight: '900',
-              color: 'white',
-              textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-              whiteSpace: 'nowrap'
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              boxShadow: '0 5px 15px rgba(0, 0, 0, 0.1)',
+              transform: 'scale(0.95)',
+              opacity: 0.5,
+            }}
+          />
+        )}
+
+        {/* 現在のカード */}
+        <KeywordSwipeCard
+          key={currentIndex}
+          item={keywords[currentIndex]}
+          onSwipe={handleSwipe}
+        />
+
+        {/* フィードバック表示（カードの裏） */}
+        {showFeedback && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              zIndex: 1
             }}
           >
-            {feedbackText}
+            <div
+              key={feedbackText}
+              style={{
+                fontSize: '28px',
+                fontWeight: '900',
+                color: 'white',
+                textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {feedbackText}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* プログレスバー & カウンター - 統合モードでは上部に表示 */}
       <div style={{
@@ -401,7 +403,7 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
           </>
         )}
       </div>
-
+      </div>
     </div>
   );
 };
