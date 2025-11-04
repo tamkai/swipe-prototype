@@ -818,14 +818,451 @@ const handleShowDebugText = () => {
 
 ---
 
-**更新日**: 2025-10-26
-**最終更新**: 統合診断フロー完成、GitHub & Netlifyデプロイ完了、デバッグ機能改善
+## 🎲 キーワードランダム選出機能実装（2025-11-04）
+
+### タイプ1診断のキーワード動的生成 ✅
+
+#### 背景
+当初は開発速度を上げるため、32個のキーワードを固定にしていたが、本来の構想として以下を実装：
+- keyword-candidates.csvからランダムに32個を選出
+- 8次元それぞれから4個ずつ均等に選出
+- pole_a/pole_bのランダム反転（バイアス除去）
+- 問題順序のランダムシャッフル
+
+#### 実装内容
+
+**新規ファイル**:
+- `src/utils/keywordSelector.js` - キーワード選出ロジック
+  - `parseCSV()`: CSVをパースして配列化
+  - `selectRandomPairs()`: 各次元から指定数をランダム選出
+  - `convertToSwipeData()`: 50%の確率でpole反転 + シャッフル
+  - `generateRandomKeywordSet()`: メイン関数（上記3つを統合）
+
+**データソース**:
+- `public/keyword-candidates.csv`: 80行のキーワードプール
+  - 8次元 × 10ペア = 80行
+  - 各行: `dimension,pole_a,keyword_a,pole_b,keyword_b`
+
+**修正ファイル**:
+- `src/components/production/IntegratedDiagnosisFlow.jsx`
+  - 静的import `keywordSwipeData` を削除
+  - `generateRandomKeywordSet()` をimport
+  - `useEffect`でCSVを非同期読み込み
+  - `keywords` stateで動的キーワードセットを管理
+  - ローディング画面追加（keywords.length === 0の間表示）
+
+**技術的な実装**:
+```javascript
+// IntegratedDiagnosisFlow.jsx
+const [keywords, setKeywords] = useState([]);
+
+useEffect(() => {
+  const loadKeywords = async () => {
+    try {
+      const response = await fetch('/keyword-candidates.csv');
+      const csvText = await response.text();
+      const randomKeywords = generateRandomKeywordSet(csvText, 4);
+      setKeywords(randomKeywords);
+      console.log('ランダムキーワード生成完了:', randomKeywords);
+    } catch (error) {
+      console.error('キーワード読み込みエラー:', error);
+      setKeywords([]);
+    }
+  };
+  loadKeywords();
+}, []);
+
+// KeywordSwipeStackに渡す
+<KeywordSwipeStack
+  keywords={keywords}
+  onComplete={handleType1Complete}
+/>
+```
+
+**pole反転の仕組み**:
+```javascript
+// keywordSelector.js
+const useMainAsPoleA = Math.random() > 0.5;
+
+if (useMainAsPoleA) {
+  return { keyword: pair.keyword_a, compareTo: pair.keyword_b, pole: pair.pole_a };
+} else {
+  // pole_bをメインにする（反転）
+  return { keyword: pair.keyword_b, compareTo: pair.keyword_a, pole: pair.pole_b };
+}
+```
+
+#### 効果
+- **毎回異なる診断体験**: ユーザーは毎回違うキーワードセットで診断
+- **バイアス除去**: pole反転により「左寄り」「右寄り」の偏りを防止
+- **80問プールの有効活用**: 32問固定から80問プールへ拡大
+- **スコア計算の公平性**: ランダム化によりより正確な測定
+
+#### 検証済み機能
+✅ CSVからのキーワード読み込み
+✅ 各次元から4個ずつ均等選出
+✅ pole反転ロジック（50%確率）
+✅ 問題順序のシャッフル
+✅ ローディング画面表示
+✅ 動的キーワードセットのKeywordSwipeStackへの渡し
+
+---
+
+## 🌳 Life Reflectionフロー統合（2025-11-04）
+
+### 診断フローの再構築完了 ✅
+
+#### 背景
+Life Reflectionを本格的にプログラムに組み込むため、診断フローを全面的に再設計。
+
+#### 実装内容
+
+**新しいフロー**:
+```
+BasicInfoInput (名前・肩書き入力)
+  ↓ 「次へ →」
+Life Reflection (必須、スキップなし)
+  ↓ 完了
+Instruction画面 (タイプ1・タイプ2の説明 + 創造性スライダー)
+  ↓ スライダー操作で「診断開始 →」がenable
+タイプ1診断 → タイプ2診断 → 結果画面
+```
+
+**主要な変更**:
+
+1. **Life Reflectionのスキップボタン削除**
+   - `PurposeCarvingIntro.jsx`: スキップボタンを削除、開始ボタンを全幅表示
+   - Life Reflectionを必須プロセスに変更
+
+2. **創造性スライダーの移動**
+   - `BasicInfoInput.jsx` から削除
+   - `IntegratedDiagnosisFlow.jsx` の instruction 画面に移動
+   - スライダーの状態管理:
+     - `creativeExperience`: スライダーの値（0.5初期値）
+     - `isDragging`: ドラッグ中フラグ
+     - `hasMovedSlider`: スライダー操作済みフラグ
+
+3. **診断開始ボタンの有効化制御**
+   - スライダーを動かすまでボタンdisabled
+   - 視覚的フィードバック:
+     - 未操作: グレー背景（#d1d5db）、低opacity（0.6）
+     - 操作済み: ダークグレー背景（#374151）、シャドウ表示
+
+4. **フロー管理の改善**
+   - `phase` ステートに `lifeReflection` を追加
+   - `handleLifeReflectionComplete`: Life Reflectionデータを基本情報にマージ
+   - `basicInfo.lifeReflection`: Life Reflectionの全データを保持
+
+**技術的な実装**:
+
+```javascript
+// IntegratedDiagnosisFlow.jsx
+const [phase, setPhase] = useState('basicInfo');
+// basicInfo, lifeReflection, instruction, type1, type2, results
+
+const [creativeExperience, setCreativeExperience] = useState(0.5);
+const [hasMovedSlider, setHasMovedSlider] = useState(false);
+
+const handleLifeReflectionComplete = (data) => {
+  setLifeReflectionData(data);
+  const completeInfo = {
+    ...basicInfo,
+    creativeExperience,
+    lifeReflection: data
+  };
+  setBasicInfo(completeInfo);
+  setPhase('instruction');
+};
+```
+
+**Life Reflectionデータ構造**:
+```javascript
+{
+  age_0_10: ['項目1', '項目2', ...],
+  age_11_20: ['項目1', '項目2', ...],
+  age_21_now: ['項目1', '項目2', ...],
+  career_reason: '理由のテキスト',
+  values: ['価値観1', '価値観2', ...]
+}
+```
+
+#### デバッグデータへの反映
+
+**CreativeCompassResults.jsx の改善**:
+- `generateDebugText()` に Life Reflection セクションを追加
+- 年代ごとの振り返り（0〜10歳、11〜20歳、21歳〜現在）
+- キャリア選択理由
+- 大切な価値観
+- 空欄は自動スキップ（入力内容のみ表示）
+
+**出力例**:
+```markdown
+## Life Reflection（人生振り返り）
+
+### 0〜10歳
+1. レゴブロックで家を作る
+2. 昆虫採集
+
+### 11〜20歳
+1. 部活動で全国大会出場
+2. 友達とバンド活動
+
+### 21歳〜現在
+1. 新規事業の立ち上げ
+2. プログラミング学習
+
+### 現在のキャリアを選んだ理由
+人の課題を解決することに興味があったから
+
+### 大切にしている価値観
+1. 誠実さ
+2. 挑戦
+```
+
+#### 修正されたファイル
+- [PurposeCarvingIntro.jsx](src/components/prototypes/PurposeCarvingIntro.jsx) - スキップボタン削除
+- [BasicInfoInput.jsx](src/components/production/BasicInfoInput.jsx) - 創造性スライダー削除
+- [IntegratedDiagnosisFlow.jsx](src/components/production/IntegratedDiagnosisFlow.jsx) - フロー再構築、スライダー追加
+- [CreativeCompassResults.jsx](src/components/production/CreativeCompassResults.jsx) - Life Reflection出力追加
+
+#### 検証済み機能
+✅ Life Reflectionスキップ不可（必須化）
+✅ 創造性スライダーのinstruction画面への移動
+✅ スライダー操作による診断開始ボタン有効化
+✅ Life ReflectionデータのbasicInfoへの統合
+✅ デバッグデータへのLife Reflection出力
+✅ 完全フロー動作確認（BasicInfo → LifeReflection → Instruction → Type1 → Type2 → Results）
+
+#### ユーザーフィードバック
+- フローが自然で分かりやすい
+- Life Reflectionが必須になったことで診断の質が向上
+- 創造性スライダーの位置が適切（タイプ1/2説明の後）
+
+---
+
+## 📊 次回実装予定: Supabase管理画面（レベル2）
+
+### 実装内容（見積もり: 4〜6時間）
+
+#### インタビュー用UI（推奨レベル）
+
+**機能要件**:
+1. **参加者カード形式**
+   - 基本情報 + 創造性プロファイルのビジュアル（8軸表示）
+   - タイプ1×タイプ2のギャップ可視化（色分け）
+   - Life Reflectionの要約表示
+
+2. **詳細ビュー**
+   - 8軸スライダー（結果画面と同じデュアルマーカー）
+   - Life Reflectionの全文表示（折りたたみ可能）
+   - スワイプ履歴のタイムライン
+   - メモ欄（インタビュー中の気づきを記録）
+
+3. **フィルタリング**
+   - 特定の軸で大きなギャップがある人を抽出
+   - 創造体験レベルで絞り込み
+
+4. **CSVエクスポート**（Gemini API用）
+
+**ファイル構成**:
+```
+src/
+├── components/
+│   └── admin/
+│       ├── AdminDashboard.jsx       # 参加者一覧
+│       ├── ParticipantCard.jsx      # 参加者カード
+│       ├── ParticipantDetail.jsx    # 詳細モーダル
+│       └── AdminLogin.jsx           # 簡易認証
+├── services/
+│   └── supabase.js                  # fetchAfflatusResponses()追加
+```
+
+**実装手順**:
+1. Life Reflectionデータの保存追加（15分）
+   - `saveAfflatusResponse`に`life_reflection`フィールド追加
+2. データ取得関数（30分）
+3. AdminDashboard実装（2時間）
+4. ParticipantDetail実装（2時間）
+5. CSVエクスポート（1時間）
+
+**技術スタック**:
+- 既存コンポーネントの再利用（DimensionSlider、CreativeCompassResults）
+- Supabaseの`SELECT`のみ（複雑なクエリ不要）
+- React hooks（useState、useEffect）
+
+---
+
+## 🗄️ Supabaseデータベース再構築（2025-11-04）
+
+### データベーススキーマの正規化完了 ✅
+
+#### 背景
+当初は1テーブルにすべてを格納していたが、Life Reflectionデータ（15項目）と個人のパーパス・価値観を分離し、管理画面での編集を想定した正規化されたスキーマに再設計。
+
+#### 新しいテーブル構造
+
+**1. sessions テーブル**
+- `id`: UUID（主キー）
+- `user_agent`: ユーザーエージェント
+- `ip_address`: IPアドレス（サーバーサイドで記録）
+- `created_at`: 作成日時
+
+**2. afflatus_responses テーブル（メイン）**
+- `id`: SERIAL（主キー）
+- `session_id`: UUID（sessionsへの外部キー）
+- `name`, `title`, `creative_experience`: 基本情報
+- `type1_*`: タイプ1診断結果（8軸）
+- `type2_*`: タイプ2診断結果（8軸）
+- `swipe_history`: JSONB（キーワードスワイプ履歴）
+- `slider_history`: JSONB（スライダー操作履歴）
+- `interview_memo`: TEXT（管理画面用メモ欄、リッチテキスト）
+- `created_at`, `updated_at`: タイムスタンプ
+
+**3. life_reflections テーブル**
+- `id`: SERIAL（主キー）
+- `response_id`: INT（afflatus_responsesへの外部キー）
+- `age_0_10_item1` 〜 `age_0_10_item5`: 0〜10歳の振り返り（5項目）
+- `age_11_20_item1` 〜 `age_11_20_item5`: 11〜20歳の振り返り（5項目）
+- `age_21_now_item1` 〜 `age_21_now_item5`: 21歳〜現在の振り返り（5項目）
+- `career_reason`: TEXT（現在のキャリアを選んだ理由）
+- `created_at`, `updated_at`: タイムスタンプ
+
+**4. personal_values テーブル**
+- `id`: SERIAL（主キー）
+- `response_id`: INT（afflatus_responsesへの外部キー）
+- `value1`, `value2`, `value3`: TEXT（大切な価値観3つ）
+- `created_at`, `updated_at`: タイムスタンプ
+- **管理画面で編集可能**
+
+**5. personal_purposes テーブル**
+- `id`: SERIAL（主キー）
+- `response_id`: INT（afflatus_responsesへの外部キー）
+- `purpose`: TEXT（個人のパーパス）
+- `created_at`, `updated_at`: タイムスタンプ
+- **管理画面で編集可能**
+- **診断時にnullで空レコード作成**（`.single()`エラー防止）
+
+#### 主要な修正内容
+
+**supabase.js の改善**:
+
+1. **`saveAfflatusResponse()` の再構築**（lines 44-144）
+   - メインテーブルへのINSERT
+   - Life Reflectionデータを別テーブルに保存（15項目を個別カラムにマッピング）
+   - 価値観を別テーブルに保存（3項目）
+   - 個人のパーパスを空で作成（管理画面での後編集用）
+   - 全て同期的に実行（トランザクション的な動作）
+
+2. **`fetchAfflatusResponses()` の改善**（lines 151-198）
+   - メインテーブルからデータ取得
+   - `Promise.all`で関連テーブルをJOIN
+   - enrichedDataとして統合されたデータを返却
+
+3. **新規関数の追加**:
+   - `saveInterviewMemo(id, memo)`: インタビューメモの保存（lines 229-246）
+   - `savePersonalValues(responseId, values)`: 価値観の保存・更新（lines 254-301）
+   - `savePersonalPurpose(responseId, purpose)`: パーパスの保存・更新（lines 309-352）
+
+#### バグ修正
+
+**1. 創造体験レベルが0.50に固定される問題**
+
+**問題**: Instruction画面でスライダーを動かしても、Supabaseに保存される値が常に0.50（初期値）になる。
+
+**原因**: `IntegratedDiagnosisFlow.jsx` の `handleStartDiagnosis()` で、`creativeExperience` stateが `basicInfo` に統合されないままタイプ1診断を開始していた。
+
+**解決**: [IntegratedDiagnosisFlow.jsx:111-119](src/components/production/IntegratedDiagnosisFlow.jsx#L111-L119)
+```javascript
+const handleStartDiagnosis = () => {
+  // creativeExperienceを含めて基本情報を更新
+  const updatedInfo = {
+    ...basicInfo,
+    creativeExperience
+  };
+  setBasicInfo(updatedInfo);
+  setPhase('type1');
+};
+```
+
+**2. スワイプ履歴に比較対象キーワードが記録されない問題**
+
+**問題**: タイプ1診断で選択したキーワードのみが記録され、比較対象のキーワード（`compareTo`）が記録されていなかった。検証のために両方のキーワードが必要。
+
+**解決**: [KeywordSwipeStack.jsx:19-42](src/components/production/KeywordSwipeStack.jsx#L19-L42)
+```javascript
+const handleSwipe = (direction, item) => {
+  // スワイプ履歴を記録（選択したキーワードと比較対象の両方を記録）
+  const newHistoryItem = {
+    keyword: item.keyword,
+    compareTo: item.compareTo, // 比較対象のキーワードを追加
+    dimension: item.dimension,
+    pole: item.pole,
+    direction,
+    timestamp: new Date().toISOString()
+  };
+
+  const updatedHistory = [...swipeHistory, newHistoryItem];
+  setSwipeHistory(updatedHistory);
+
+  // ... (中略) ...
+
+  setTimeout(() => {
+    if (currentIndex + 1 >= keywords.length) {
+      // 全て完了（最新の履歴を渡す）
+      onComplete(updatedHistory); // 更新された履歴を確実に渡す
+    } else {
+      // Next card...
+    }
+  }, delay);
+};
+```
+
+**技術的なポイント**:
+- `updatedHistory` 変数を作成してから `setSwipeHistory()` を実行
+- `onComplete()` には最新の `updatedHistory` を渡す
+- これにより、最後のスワイプ履歴も確実に保存される
+
+#### スワイプ履歴のデータ構造（改善後）
+
+```json
+{
+  "keyword": "情熱に従う",
+  "compareTo": "期待に応える",
+  "dimension": "動機",
+  "pole": "内発",
+  "direction": "match",
+  "timestamp": "2025-11-04T12:34:56.789Z"
+}
+```
+
+#### 検証済み機能
+✅ 正規化されたデータベーススキーマ
+✅ Life Reflectionデータの別テーブル保存（15項目）
+✅ 価値観・パーパスの別テーブル管理
+✅ 創造体験レベルの正確な保存
+✅ スワイプ履歴の完全な記録（選択+比較対象）
+✅ 空のパーパスレコード作成（`.single()`エラー防止）
+✅ 管理画面用のCRUD関数実装
+
+#### 次回実装予定
+- 管理画面（AdminDashboard）の開発
+  - 参加者一覧表示（カード形式）
+  - 詳細モーダル（8軸スライダー + Life Reflection全文）
+  - インタビューメモのリッチテキスト編集
+  - 価値観・パーパスの編集機能
+  - CSVエクスポート（Gemini API用）
+
+---
+
+**更新日**: 2025-11-04
+**最終更新**: Supabaseデータベース再構築完了、創造体験レベル・スワイプ履歴バグ修正
 **セッション内容**:
-- トップページ + 説明ページ + タイプ2診断フローの実装
-- デュアルマーカーのエッジケース修正
-- デバッグ機能をテキストボックス表示方式に変更
-- GitHubリポジトリ作成（https://github.com/tamkai/swipe-prototype）
-- Netlifyデプロイ（https://afflatus-test01.netlify.app）
-- 4日間限定公開開始
-**次回セッション**: 外部ユーザーフィードバック収集 → 改善 → データ収集機能実装
+- データベーススキーマの正規化（5テーブル構造）
+- Life Reflectionを別テーブルに分離（15項目）
+- 価値観・パーパスを管理画面編集可能な別テーブルに分離
+- 創造体験レベルが0.50に固定される問題を修正
+- スワイプ履歴に比較対象キーワードを追加
+- 空のパーパスレコード作成によるクエリエラー防止
+- 管理画面用CRUD関数の実装
+**次回セッション**: 管理画面（AdminDashboard）の実装
 **作成者**: tamkai + Claude Code
