@@ -9,9 +9,15 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [showDebugText, setShowDebugText] = useState(false);
+  const [debugText, setDebugText] = useState('');
+  const [includeLifeReflection, setIncludeLifeReflection] = useState(true); // 完全版=true, 創造性のみ=false
   const [memo, setMemo] = useState('');
   const [isSavingMemo, setIsSavingMemo] = useState(false);
   const [usingSampleData, setUsingSampleData] = useState(false);
+
+  // キーワードスワイプ履歴表示用
+  const [showSwipeHistory, setShowSwipeHistory] = useState(false);
+  const [selectedDimension, setSelectedDimension] = useState(null);
 
   // 元データを保持（変更検知用）
   const [originalPurpose, setOriginalPurpose] = useState('');
@@ -69,7 +75,7 @@ const AdminDashboard = () => {
                   lr.age_21_now_item4,
                   lr.age_21_now_item5
                 ].filter(item => item && item.trim()),
-                careerReason: lr.career_reason,
+                career_reason: lr.career_reason,
                 values: [
                   participant.personal_values?.value1,
                   participant.personal_values?.value2,
@@ -84,7 +90,47 @@ const AdminDashboard = () => {
         setResponses(normalizedSampleData);
         setUsingSampleData(true);
       } else {
-        setResponses(data);
+        // 実データもlife_reflectionを配列形式に変換
+        const normalizedData = data.map(participant => {
+          if (participant.life_reflection) {
+            const lr = participant.life_reflection;
+            return {
+              ...participant,
+              life_reflection: {
+                age_0_10: [
+                  lr.age_0_10_item1,
+                  lr.age_0_10_item2,
+                  lr.age_0_10_item3,
+                  lr.age_0_10_item4,
+                  lr.age_0_10_item5
+                ].filter(item => item && item.trim()),
+                age_11_20: [
+                  lr.age_11_20_item1,
+                  lr.age_11_20_item2,
+                  lr.age_11_20_item3,
+                  lr.age_11_20_item4,
+                  lr.age_11_20_item5
+                ].filter(item => item && item.trim()),
+                age_21_now: [
+                  lr.age_21_now_item1,
+                  lr.age_21_now_item2,
+                  lr.age_21_now_item3,
+                  lr.age_21_now_item4,
+                  lr.age_21_now_item5
+                ].filter(item => item && item.trim()),
+                career_reason: lr.career_reason,
+                values: lr.values || [
+                  participant.personal_values?.value1,
+                  participant.personal_values?.value2,
+                  participant.personal_values?.value3
+                ].filter(item => item && item.trim())
+              }
+            };
+          }
+          return participant;
+        });
+
+        setResponses(normalizedData);
         setUsingSampleData(false);
       }
     } catch (error) {
@@ -226,29 +272,59 @@ const AdminDashboard = () => {
     dimensionsData.forEach((dimension) => {
       const value = participant[`${type}_${dimension.id}`];
 
-      // 左側の極（pole_a）への強度
+      // 左側の極（pole_a）への強度（0-4スケール）
       if (value <= 0.5) {
-        const strength = (0.5 - value) * 2; // 0.0 = 100%, 0.5 = 0%
+        const absoluteScore = (0.5 - value) * 8; // 0.0 = 4.0, 0.5 = 0.0
         poles.push({
           poleName: dimension.pole_a,
           axis: dimension.dimension,
-          strength: strength * 100,
+          absoluteScore: absoluteScore,
           value: value
         });
       } else {
-        // 右側の極（pole_b）への強度
-        const strength = (value - 0.5) * 2; // 0.5 = 0%, 1.0 = 100%
+        // 右側の極（pole_b）への強度（0-4スケール）
+        const absoluteScore = (value - 0.5) * 8; // 0.5 = 0.0, 1.0 = 4.0
         poles.push({
           poleName: dimension.pole_b,
           axis: dimension.dimension,
-          strength: strength * 100,
+          absoluteScore: absoluteScore,
           value: value
         });
       }
     });
 
     // 強度の高い順にソートして上位3つを返す
-    return poles.sort((a, b) => b.strength - a.strength).slice(0, 3);
+    return poles.sort((a, b) => b.absoluteScore - a.absoluteScore).slice(0, 3);
+  };
+
+  // 特定の軸のスワイプ履歴を取得
+  const getSwipeHistoryForDimension = (dimensionName) => {
+    if (!selectedParticipant || !selectedParticipant.swipe_history) {
+      console.log('swipe_history not found:', selectedParticipant);
+      return [];
+    }
+
+    // 絵文字を除去して軸名のみを抽出（例: '🎯 動機' → '動機'）
+    // より広範囲の絵文字に対応（Emoji全般を削除）
+    const cleanDimensionName = dimensionName.replace(/[\p{Emoji}\s]/gu, '').trim();
+    console.log('Original dimension:', dimensionName);
+    console.log('Clean dimension:', cleanDimensionName);
+
+    const filtered = selectedParticipant.swipe_history.filter(
+      item => item.dimension === cleanDimensionName
+    );
+
+    console.log('Filtered results:', filtered.length, 'items');
+    return filtered;
+  };
+
+  // スワイプ履歴モーダルを開く
+  const handleShowSwipeHistory = (dimensionId) => {
+    const dimension = dimensionsData.find(d => d.id === dimensionId);
+    console.log('Selected dimension:', dimension);
+    console.log('dimension.dimension:', dimension.dimension);
+    setSelectedDimension(dimension);
+    setShowSwipeHistory(true);
   };
 
   // ギャップの大きい軸を計算
@@ -270,20 +346,83 @@ const AdminDashboard = () => {
     return gaps.filter(item => item.gap >= threshold).sort((a, b) => b.gap - a.gap);
   };
 
-  // MD形式のデバッグテキスト生成
-  const generateDebugText = (participant) => {
+  // Type1とType2の合計値TOP3を計算（同じ極に両方とも触れているもの）
+  const getCombinedTop3Poles = (participant) => {
+    const combinedScores = [];
+
+    dimensionsData.forEach((dimension) => {
+      const type1Value = participant[`type1_${dimension.id}`];
+      const type2Value = participant[`type2_${dimension.id}`];
+
+      // 両方とも左側の極（pole_a）に触れている場合
+      if (type1Value <= 0.5 && type2Value <= 0.5) {
+        const type1Score = (0.5 - type1Value) * 8; // 0-4スケール
+        const type2Score = (0.5 - type2Value) * 8;
+        const combinedScore = type1Score + type2Score;
+        combinedScores.push({
+          poleName: dimension.pole_a,
+          axis: dimension.dimension,
+          combinedScore: combinedScore,
+          type1Score: type1Score,
+          type2Score: type2Score
+        });
+      }
+      // 両方とも右側の極（pole_b）に触れている場合
+      else if (type1Value > 0.5 && type2Value > 0.5) {
+        const type1Score = (type1Value - 0.5) * 8;
+        const type2Score = (type2Value - 0.5) * 8;
+        const combinedScore = type1Score + type2Score;
+        combinedScores.push({
+          poleName: dimension.pole_b,
+          axis: dimension.dimension,
+          combinedScore: combinedScore,
+          type1Score: type1Score,
+          type2Score: type2Score
+        });
+      }
+      // 片方が左、片方が右の場合はスキップ（合計値を出さない）
+    });
+
+    // 合計スコアの高い順にソートして上位3つを返す
+    return combinedScores.sort((a, b) => b.combinedScore - a.combinedScore).slice(0, 3);
+  };
+
+  // MDデータを生成して表示
+  const handleShowDebugText = (includeLife) => {
+    const text = generateDebugText(selectedParticipant, includeLife);
+    setDebugText(text);
+    setIncludeLifeReflection(includeLife);
+    setShowDebugText(true);
+  };
+
+  // MDデータを最新情報にリフレッシュ
+  const handleRefreshDebugText = () => {
+    const text = generateDebugText(selectedParticipant, includeLifeReflection);
+    setDebugText(text);
+  };
+
+  // MD形式のデータ生成（完全版 or 創造性のみ）
+  const generateDebugText = (participant, includeLifeReflection = true) => {
     let text = '# AFFLATUS創造性診断 結果データ\n\n';
 
+    // 基本情報
     text += `## 基本情報\n`;
     text += `- お名前: ${participant.name}\n`;
     if (participant.title) {
       text += `- 職業・肩書き: ${participant.title}\n`;
     }
     const experiencePercentage = Math.round(participant.creative_experience * 100);
-    text += `- 創造体験レベル: ${experiencePercentage}%\n\n`;
-    text += '---\n\n';
+    text += `- 創造体験レベル: ${experiencePercentage}%\n`;
 
-    if (participant.life_reflection) {
+    // 個人のパーパス（保存されている場合）
+    if (participant.personal_purpose?.purpose && participant.personal_purpose.purpose.trim()) {
+      text += `- 個人のパーパス: ${participant.personal_purpose.purpose}\n`;
+    }
+
+    text += '\n---\n\n';
+
+    // Life Reflection（完全版のみ）
+    if (includeLifeReflection && participant.life_reflection) {
       text += `## Life Reflection（人生振り返り）\n\n`;
       const lr = participant.life_reflection;
 
@@ -311,32 +450,66 @@ const AdminDashboard = () => {
         text += '\n';
       }
 
-      if (lr.careerReason && lr.careerReason.trim()) {
-        text += `### 現在のキャリアを選んだ理由\n${lr.careerReason}\n\n`;
-      }
-
-      if (lr.values?.length > 0) {
-        text += `### 大切にしている価値観\n`;
-        lr.values.forEach((value, index) => {
-          if (value.trim()) text += `${index + 1}. ${value}\n`;
-        });
-        text += '\n';
+      if (lr.career_reason && lr.career_reason.trim()) {
+        text += `### 現在のキャリアを選んだ理由\n${lr.career_reason}\n\n`;
       }
 
       text += '---\n\n';
     }
 
-    dimensionsData.forEach((dimension) => {
-      const val1 = participant[`type1_${dimension.id}`];
-      const val2 = participant[`type2_${dimension.id}`];
-      const percentage1 = Math.round(val1 * 100);
-      const percentage2 = Math.round(val2 * 100);
+    // 大切にしている価値観（常に含める）
+    if (participant.personal_values?.value1 || participant.personal_values?.value2 || participant.personal_values?.value3) {
+      text += `## 大切にしている価値観\n`;
+      if (participant.personal_values.value1 && participant.personal_values.value1.trim()) {
+        text += `1. ${participant.personal_values.value1}\n`;
+      }
+      if (participant.personal_values.value2 && participant.personal_values.value2.trim()) {
+        text += `2. ${participant.personal_values.value2}\n`;
+      }
+      if (participant.personal_values.value3 && participant.personal_values.value3.trim()) {
+        text += `3. ${participant.personal_values.value3}\n`;
+      }
+      text += '\n---\n\n';
+    }
 
-      text += `## ${dimension.dimension}\n`;
-      text += `- タイプ1（直感判断）: ${percentage1}%\n`;
-      text += `- タイプ2（自己認識）: ${percentage2}%\n`;
-      text += `- ギャップ: ${Math.abs(percentage1 - percentage2)}%\n\n`;
+    // 合計値TOP3
+    const combinedTop3 = getCombinedTop3Poles(participant);
+    if (combinedTop3.length > 0) {
+      text += `## 合計値TOP3（Type1×Type2で一貫している特性）\n`;
+      combinedTop3.forEach((item, index) => {
+        text += `${index + 1}. ${item.axis}：${item.poleName}（${item.combinedScore.toFixed(1)}）\n`;
+        text += `   - Type1: ${item.type1Score.toFixed(1)} / Type2: ${item.type2Score.toFixed(1)}\n`;
+      });
+      text += '\n---\n\n';
+    }
+
+    // 創造性プロファイル（極ベースの数値表記）
+    text += `## 創造性プロファイル（8軸詳細）\n\n`;
+    dimensionsData.forEach((dimension) => {
+      const type1Value = participant[`type1_${dimension.id}`];
+      const type2Value = participant[`type2_${dimension.id}`];
+
+      // 極を判定
+      const type1Pole = type1Value <= 0.5 ? dimension.pole_a : dimension.pole_b;
+      const type2Pole = type2Value <= 0.5 ? dimension.pole_a : dimension.pole_b;
+
+      // 0-4スケールに変換
+      const type1Score = Math.abs(type1Value - 0.5) * 8;
+      const type2Score = Math.abs(type2Value - 0.5) * 8;
+      const gap = Math.abs(type1Value - type2Value) * 4;
+
+      text += `### ${dimension.dimension}：${dimension.pole_a} ↔ ${dimension.pole_b}\n`;
+      text += `- Type1（直感判断）: ${type1Pole}（${type1Score.toFixed(1)}）\n`;
+      text += `- Type2（自己認識）: ${type2Pole}（${type2Score.toFixed(1)}）\n`;
+      text += `- ギャップ: ${gap.toFixed(1)}\n\n`;
     });
+
+    // インタビューメモ（保存されている場合）
+    if (participant.interview_memo && participant.interview_memo.trim()) {
+      text += '---\n\n';
+      text += `## インタビューメモ\n\n`;
+      text += participant.interview_memo + '\n\n';
+    }
 
     return text;
   };
@@ -562,20 +735,6 @@ const AdminDashboard = () => {
                 </p>
               )}
 
-              {hasLargeGap && (
-                <div style={{
-                  marginTop: '10px',
-                  padding: '6px 10px',
-                  backgroundColor: '#fef3c7',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: '#92400e'
-                }}>
-                  ⚠️ 大きなギャップあり
-                </div>
-              )}
-
               <div style={{
                 marginTop: '10px',
                 paddingTop: '10px',
@@ -646,13 +805,16 @@ const AdminDashboard = () => {
                 cursor: 'pointer',
                 color: '#9ca3af',
                 width: '40px',
+                minWidth: '40px',
                 height: '40px',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                zIndex: 10
+                zIndex: 10,
+                padding: 0,
+                flexShrink: 0
               }}
             >
               ×
@@ -660,7 +822,7 @@ const AdminDashboard = () => {
 
             {/* 左側: 基本情報 + 8軸数値表 */}
             <div style={{
-              flex: '0 0 55%',
+              flex: '0 0 60%',
               padding: '40px',
               overflowY: 'auto',
               borderRight: '1px solid #e5e7eb'
@@ -685,22 +847,24 @@ const AdminDashboard = () => {
 
               {/* パーパス（全幅・最優先） */}
               <div style={{
-                padding: '15px 20px',
-                backgroundColor: '#fef3c7',
+                backgroundColor: '#f9fafb',
                 borderRadius: '12px',
-                border: '2px solid #f59e0b',
+                border: '2px solid #d1d5db',
                 marginBottom: '15px',
-                position: 'relative'
+                position: 'relative',
+                overflow: 'hidden'
               }}>
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '6px'
+                  padding: '10px 20px',
+                  backgroundColor: '#374151',
+                  marginBottom: '0'
                 }}>
                   <div style={{
                     fontSize: '13px',
-                    color: '#92400e',
+                    color: '#ffffff',
                     fontWeight: '600'
                   }}>
                     個人のパーパス
@@ -716,7 +880,7 @@ const AdminDashboard = () => {
                       padding: '4px 10px',
                       fontSize: '11px',
                       fontWeight: '600',
-                      backgroundColor: (usingSampleData || (selectedParticipant.personal_purpose?.purpose || '') === originalPurpose) ? '#d1d5db' : '#f59e0b',
+                      backgroundColor: (usingSampleData || (selectedParticipant.personal_purpose?.purpose || '') === originalPurpose) ? '#d1d5db' : '#374151',
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
@@ -727,53 +891,57 @@ const AdminDashboard = () => {
                     更新
                   </button>
                 </div>
-                <textarea
-                  value={selectedParticipant.personal_purpose?.purpose || ''}
-                  onChange={(e) => {
-                    const updatedParticipant = {
-                      ...selectedParticipant,
-                      personal_purpose: {
-                        ...selectedParticipant.personal_purpose,
-                        purpose: e.target.value
-                      }
-                    };
-                    setSelectedParticipant(updatedParticipant);
-                  }}
-                  placeholder="パーパスを入力してください"
-                  style={{
-                    width: '100%',
-                    minHeight: '40px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#92400e',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    resize: 'none',
-                    fontFamily: 'inherit',
-                    lineHeight: '1.4'
-                  }}
-                />
+                <div style={{ padding: '15px 20px' }}>
+                  <textarea
+                    value={selectedParticipant.personal_purpose?.purpose || ''}
+                    onChange={(e) => {
+                      const updatedParticipant = {
+                        ...selectedParticipant,
+                        personal_purpose: {
+                          ...selectedParticipant.personal_purpose,
+                          purpose: e.target.value
+                        }
+                      };
+                      setSelectedParticipant(updatedParticipant);
+                    }}
+                    placeholder="パーパスを入力してください"
+                    style={{
+                      width: '100%',
+                      minHeight: '40px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#1f2937',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      resize: 'none',
+                      fontFamily: 'inherit',
+                      lineHeight: '1.4'
+                    }}
+                  />
+                </div>
               </div>
 
               {/* 価値観（全幅） */}
               <div style={{
-                padding: '15px 20px',
-                backgroundColor: '#f0fdf4',
+                backgroundColor: '#f9fafb',
                 borderRadius: '12px',
-                border: '2px solid #10b981',
+                border: '2px solid #d1d5db',
                 marginBottom: '15px',
-                position: 'relative'
+                position: 'relative',
+                overflow: 'hidden'
               }}>
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '10px'
+                  padding: '10px 20px',
+                  backgroundColor: '#374151',
+                  marginBottom: '0'
                 }}>
                   <div style={{
                     fontSize: '13px',
-                    color: '#065f46',
+                    color: '#ffffff',
                     fontWeight: '600'
                   }}>
                     大切にしている価値観
@@ -789,7 +957,7 @@ const AdminDashboard = () => {
                       padding: '4px 10px',
                       fontSize: '11px',
                       fontWeight: '600',
-                      backgroundColor: (usingSampleData || JSON.stringify(selectedParticipant.life_reflection?.values || ['', '', '']) === JSON.stringify(originalValues)) ? '#d1d5db' : '#10b981',
+                      backgroundColor: (usingSampleData || JSON.stringify(selectedParticipant.life_reflection?.values || ['', '', '']) === JSON.stringify(originalValues)) ? '#d1d5db' : '#374151',
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
@@ -800,7 +968,7 @@ const AdminDashboard = () => {
                     更新
                   </button>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ padding: '15px 20px', display: 'flex', gap: '10px' }}>
                   {[0, 1, 2].map((index) => (
                     <input
                       key={index}
@@ -824,9 +992,9 @@ const AdminDashboard = () => {
                         padding: '8px 12px',
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: '#065f46',
+                        color: '#1f2937',
                         backgroundColor: 'white',
-                        border: '1px solid #10b981',
+                        border: '1px solid #9ca3af',
                         borderRadius: '6px',
                         outline: 'none'
                       }}
@@ -838,9 +1006,9 @@ const AdminDashboard = () => {
               {/* 創造体験レベル（1行・コンパクト） */}
               <div style={{
                 padding: '12px 16px',
-                backgroundColor: '#f0f9ff',
+                backgroundColor: '#f9fafb',
                 borderRadius: '8px',
-                border: '1px solid #3b82f6',
+                border: '1px solid #d1d5db',
                 marginBottom: '15px',
                 display: 'flex',
                 alignItems: 'center',
@@ -848,7 +1016,7 @@ const AdminDashboard = () => {
               }}>
                 <span style={{
                   fontSize: '13px',
-                  color: '#1e40af',
+                  color: '#374151',
                   fontWeight: '600'
                 }}>
                   創造体験レベル（自己申告）:
@@ -856,7 +1024,7 @@ const AdminDashboard = () => {
                 <span style={{
                   fontSize: '20px',
                   fontWeight: '700',
-                  color: '#1e40af'
+                  color: '#1f2937'
                 }}>
                   {Math.round(selectedParticipant.creative_experience * 100)}%
                 </span>
@@ -877,6 +1045,100 @@ const AdminDashboard = () => {
                 </span>
               </div>
 
+              {/* Life Reflection（人生振り返り） */}
+              {selectedParticipant.life_reflection && (
+                <div style={{
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '12px',
+                  border: '2px solid #d1d5db',
+                  marginBottom: '30px',
+                  overflow: 'hidden'
+                }}>
+                  <h3 style={{
+                    fontSize: '15px',
+                    fontWeight: '700',
+                    color: '#ffffff',
+                    backgroundColor: '#374151',
+                    padding: '10px 20px',
+                    margin: '0 0 15px 0'
+                  }}>
+                    Life Reflection（人生振り返り）
+                  </h3>
+                  <div style={{ padding: '0 20px 20px 20px' }}>
+
+                  {/* 年代別の振り返り */}
+                  <div style={{ marginBottom: '20px' }}>
+                    {[
+                      { key: 'age_0_10', label: '0〜10歳' },
+                      { key: 'age_11_20', label: '11〜20歳' },
+                      { key: 'age_21_now', label: '21歳〜現在' }
+                    ].map(({ key, label }) => {
+                      const items = selectedParticipant.life_reflection?.[key] || [];
+                      const hasContent = items.some(item => item && item.trim());
+
+                      if (!hasContent) return null;
+
+                      return (
+                        <div key={key} style={{ marginBottom: '15px' }}>
+                          <div style={{
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            color: '#6b7280',
+                            marginBottom: '6px'
+                          }}>
+                            {label}
+                          </div>
+                          <div style={{
+                            paddingLeft: '12px',
+                            borderLeft: '3px solid #d1d5db'
+                          }}>
+                            {items.map((item, index) => {
+                              if (!item || !item.trim()) return null;
+                              return (
+                                <div key={index} style={{
+                                  fontSize: '14px',
+                                  color: '#1f2937',
+                                  marginBottom: '4px',
+                                  lineHeight: '1.5'
+                                }}>
+                                  • {item}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* キャリア選択理由 */}
+                  {selectedParticipant.life_reflection?.career_reason && (
+                    <div style={{ marginBottom: '15px' }}>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#6b7280',
+                        marginBottom: '6px'
+                      }}>
+                        現在のキャリアを選んだ理由
+                      </div>
+                      <div style={{
+                        padding: '10px 12px',
+                        backgroundColor: 'white',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        color: '#1f2937',
+                        lineHeight: '1.6',
+                        border: '1px solid #e5e7eb'
+                      }}>
+                        {selectedParticipant.life_reflection.career_reason}
+                      </div>
+                    </div>
+                  )}
+                  </div>
+                </div>
+              )}
+
               {/* トップ3とギャップの表示 */}
               <div style={{
                 display: 'grid',
@@ -885,99 +1147,122 @@ const AdminDashboard = () => {
                 marginBottom: '30px'
               }}>
                 <div style={{
-                  padding: '15px',
-                  backgroundColor: '#eff6ff',
+                  backgroundColor: '#f9fafb',
                   borderRadius: '10px',
-                  border: '2px solid #3b82f6'
+                  border: '2px solid #d1d5db',
+                  overflow: 'hidden'
                 }}>
                   <div style={{
-                    fontSize: '12px',
-                    color: '#1e40af',
-                    fontWeight: '600',
-                    marginBottom: '8px'
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    fontWeight: '700',
+                    backgroundColor: '#1e40af',
+                    padding: '10px 15px',
+                    marginBottom: '0'
                   }}>
                     Type1 極TOP3
                   </div>
+                  <div style={{ padding: '15px' }}>
                   {getTop3Poles(selectedParticipant, 'type1').map((item, index) => (
                     <div key={index} style={{
                       fontSize: '13px',
                       color: '#1f2937',
                       marginBottom: '4px'
                     }}>
-                      {index + 1}. {item.poleName} ({Math.round(item.strength)}%)
+                      {index + 1}. {item.axis}：{item.poleName}（{Math.round(item.absoluteScore)}）
                     </div>
                   ))}
-                </div>
-
-                <div style={{
-                  padding: '15px',
-                  backgroundColor: '#fef3c7',
-                  borderRadius: '10px',
-                  border: '2px solid #f59e0b'
-                }}>
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#92400e',
-                    fontWeight: '600',
-                    marginBottom: '8px'
-                  }}>
-                    大きなギャップ
                   </div>
-                  {getLargeGapDimensions(selectedParticipant, 0.3).slice(0, 3).map((item, index) => (
-                    <div key={index} style={{
-                      fontSize: '13px',
-                      color: '#1f2937',
-                      marginBottom: '4px'
-                    }}>
-                      {index + 1}. {item.dimension} ({Math.round(item.gap * 100)}%)
-                    </div>
-                  ))}
-                  {getLargeGapDimensions(selectedParticipant, 0.3).length === 0 && (
-                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                      大きなギャップなし
-                    </div>
-                  )}
                 </div>
 
                 <div style={{
-                  padding: '15px',
-                  backgroundColor: '#f0fdf4',
+                  backgroundColor: '#f9fafb',
                   borderRadius: '10px',
-                  border: '2px solid #10b981'
+                  border: '2px solid #d1d5db',
+                  overflow: 'hidden'
                 }}>
                   <div style={{
-                    fontSize: '12px',
-                    color: '#065f46',
-                    fontWeight: '600',
-                    marginBottom: '8px'
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    fontWeight: '700',
+                    backgroundColor: '#047857',
+                    padding: '10px 15px',
+                    marginBottom: '0'
                   }}>
                     Type2 極TOP3
                   </div>
+                  <div style={{ padding: '15px' }}>
                   {getTop3Poles(selectedParticipant, 'type2').map((item, index) => (
                     <div key={index} style={{
                       fontSize: '13px',
                       color: '#1f2937',
                       marginBottom: '4px'
                     }}>
-                      {index + 1}. {item.poleName} ({Math.round(item.strength)}%)
+                      {index + 1}. {item.axis}：{item.poleName}（{item.absoluteScore.toFixed(1)}）
                     </div>
                   ))}
+                  </div>
+                </div>
+
+                <div style={{
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '10px',
+                  border: '2px solid #d1d5db',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    fontWeight: '700',
+                    backgroundColor: '#6b7280',
+                    padding: '10px 15px',
+                    marginBottom: '0'
+                  }}>
+                    合計値TOP3
+                  </div>
+                  <div style={{ padding: '15px' }}>
+                  {getCombinedTop3Poles(selectedParticipant).map((item, index) => (
+                    <div key={index} style={{
+                      fontSize: '13px',
+                      color: '#1f2937',
+                      marginBottom: '4px'
+                    }}>
+                      {index + 1}. {item.axis}：{item.poleName}（{item.combinedScore.toFixed(1)}）
+                    </div>
+                  ))}
+                  {getCombinedTop3Poles(selectedParticipant).length === 0 && (
+                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                      同じ極に両方とも触れている軸がありません
+                    </div>
+                  )}
+                  </div>
                 </div>
               </div>
 
               {/* 8軸数値表 */}
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '700',
-                color: '#1f2937',
-                marginBottom: '15px'
+              <div style={{
+                backgroundColor: '#374151',
+                padding: '10px 20px',
+                borderRadius: '12px 12px 0 0',
+                marginBottom: '0'
               }}>
-                創造性プロファイル
-              </h3>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  margin: '0'
+                }}>
+                  創造性プロファイル
+                </h3>
+              </div>
               <table style={{
                 width: '100%',
                 borderCollapse: 'collapse',
-                fontSize: '14px'
+                fontSize: '14px',
+                border: '2px solid #374151',
+                borderTop: 'none',
+                borderRadius: '0 0 12px 12px',
+                overflow: 'hidden'
               }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f9fafb' }}>
@@ -997,7 +1282,7 @@ const AdminDashboard = () => {
                       color: '#3b82f6',
                       borderBottom: '2px solid #e5e7eb'
                     }}>
-                      Type1
+                      Type1：直感判断
                     </th>
                     <th style={{
                       padding: '12px',
@@ -1006,7 +1291,7 @@ const AdminDashboard = () => {
                       color: '#10b981',
                       borderBottom: '2px solid #e5e7eb'
                     }}>
-                      Type2
+                      Type2：自己認識
                     </th>
                     <th style={{
                       padding: '12px',
@@ -1023,26 +1308,26 @@ const AdminDashboard = () => {
                   {dimensionsData.map((dimension) => {
                     const type1Value = selectedParticipant[`type1_${dimension.id}`];
                     const type2Value = selectedParticipant[`type2_${dimension.id}`];
-                    const type1 = Math.round(type1Value * 100);
-                    const type2 = Math.round(type2Value * 100);
-                    const gap = Math.abs(type1 - type2);
-                    const hasLargeGap = gap >= 30;
+                    const gap = Math.abs(type1Value - type2Value);
+                    const hasLargeGap = gap >= 0.3;
 
-                    // Type1の極を判定
+                    // Type1の極を判定（0-4スケール）
                     const type1Pole = type1Value <= 0.5 ? dimension.pole_a : dimension.pole_b;
-                    const type1Strength = Math.abs(type1Value - 0.5) * 2 * 100; // 0-100%
-                    const type1IsStrong = type1Strength >= 40; // 40%以上で強い極とみなす
+                    const type1AbsoluteScore = Math.abs(type1Value - 0.5) * 8; // 0-4スケール
+                    const type1IsStrong = type1AbsoluteScore >= 1.6; // 1.6以上で強い極とみなす
 
-                    // Type2の極を判定
+                    // Type2の極を判定（0-4スケール）
                     const type2Pole = type2Value <= 0.5 ? dimension.pole_a : dimension.pole_b;
-                    const type2Strength = Math.abs(type2Value - 0.5) * 2 * 100;
-                    const type2IsStrong = type2Strength >= 40;
+                    const type2AbsoluteScore = Math.abs(type2Value - 0.5) * 8; // 0-4スケール
+                    const type2IsStrong = type2AbsoluteScore >= 1.6;
+
+                    // ギャップを0-4スケールに変換
+                    const gapAbsolute = gap * 4;
 
                     return (
                       <tr
                         key={dimension.id}
                         style={{
-                          backgroundColor: hasLargeGap ? '#fef3c7' : 'white',
                           borderBottom: '1px solid #e5e7eb'
                         }}
                       >
@@ -1051,7 +1336,7 @@ const AdminDashboard = () => {
                           fontWeight: '600',
                           color: '#1f2937'
                         }}>
-                          {dimension.dimension}
+                          {dimension.dimension}：{dimension.pole_a} ↔ {dimension.pole_b}
                         </td>
                         <td style={{
                           padding: '12px',
@@ -1060,7 +1345,32 @@ const AdminDashboard = () => {
                           fontWeight: '600',
                           backgroundColor: type1IsStrong ? '#dbeafe' : 'transparent'
                         }}>
-                          {type1}% ({type1Pole})
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                          }}>
+                            <span>{type1Pole}（{Math.round(type1AbsoluteScore)}）</span>
+                            <button
+                              onClick={() => handleShowSwipeHistory(dimension.id)}
+                              style={{
+                                padding: '2px 6px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                backgroundColor: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                opacity: 0.8
+                              }}
+                              onMouseEnter={(e) => e.target.style.opacity = '1'}
+                              onMouseLeave={(e) => e.target.style.opacity = '0.8'}
+                            >
+                              詳細
+                            </button>
+                          </div>
                         </td>
                         <td style={{
                           padding: '12px',
@@ -1069,15 +1379,16 @@ const AdminDashboard = () => {
                           fontWeight: '600',
                           backgroundColor: type2IsStrong ? '#d1fae5' : 'transparent'
                         }}>
-                          {type2}% ({type2Pole})
+                          {type2Pole}（{type2AbsoluteScore.toFixed(1)}）
                         </td>
                         <td style={{
                           padding: '12px',
                           textAlign: 'center',
                           color: hasLargeGap ? '#f59e0b' : '#6b7280',
-                          fontWeight: hasLargeGap ? '700' : '600'
+                          fontWeight: hasLargeGap ? '700' : '600',
+                          backgroundColor: hasLargeGap ? '#fef3c7' : 'transparent'
                         }}>
-                          {gap}%
+                          {gapAbsolute.toFixed(1)}
                         </td>
                       </tr>
                     );
@@ -1086,139 +1397,28 @@ const AdminDashboard = () => {
               </table>
             </div>
 
-            {/* 右側: Life Reflection + インタビューメモ + MDデータ */}
+            {/* 右側: インタビューメモ + TOP3・ギャップ + MDデータ */}
             <div style={{
-              flex: '0 0 45%',
+              flex: '0 0 40%',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden'
             }}>
-              {/* Life Reflection */}
+              {/* インタビューメモ（大きく配置） */}
               <div style={{
-                flex: '0 0 40%',
-                padding: '30px 40px',
-                overflowY: 'auto',
-                borderBottom: '1px solid #e5e7eb'
-              }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  color: '#1f2937',
-                  marginBottom: '12px'
-                }}>
-                  Life Reflection
-                </h3>
-
-                {selectedParticipant.life_reflection ? (
-                  <div style={{ fontSize: '12px', lineHeight: '1.5' }}>
-                    {selectedParticipant.life_reflection.age_0_10?.length > 0 && (
-                      <div style={{ marginBottom: '12px' }}>
-                        <h4 style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#4b5563',
-                          marginBottom: '5px'
-                        }}>
-                          0〜10歳
-                        </h4>
-                        <ul style={{ margin: 0, paddingLeft: '18px', color: '#374151' }}>
-                          {selectedParticipant.life_reflection.age_0_10.map((item, index) => (
-                            item.trim() && <li key={index} style={{ marginBottom: '2px' }}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {selectedParticipant.life_reflection.age_11_20?.length > 0 && (
-                      <div style={{ marginBottom: '12px' }}>
-                        <h4 style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#4b5563',
-                          marginBottom: '5px'
-                        }}>
-                          11〜20歳
-                        </h4>
-                        <ul style={{ margin: 0, paddingLeft: '18px', color: '#374151' }}>
-                          {selectedParticipant.life_reflection.age_11_20.map((item, index) => (
-                            item.trim() && <li key={index} style={{ marginBottom: '2px' }}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {selectedParticipant.life_reflection.age_21_now?.length > 0 && (
-                      <div style={{ marginBottom: '12px' }}>
-                        <h4 style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#4b5563',
-                          marginBottom: '5px'
-                        }}>
-                          21歳〜現在
-                        </h4>
-                        <ul style={{ margin: 0, paddingLeft: '18px', color: '#374151' }}>
-                          {selectedParticipant.life_reflection.age_21_now.map((item, index) => (
-                            item.trim() && <li key={index} style={{ marginBottom: '2px' }}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {selectedParticipant.life_reflection.careerReason && (
-                      <div style={{ marginBottom: '12px' }}>
-                        <h4 style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#4b5563',
-                          marginBottom: '5px'
-                        }}>
-                          現在のキャリアを選んだ理由
-                        </h4>
-                        <p style={{ margin: 0, color: '#374151', lineHeight: '1.5' }}>
-                          {selectedParticipant.life_reflection.careerReason}
-                        </p>
-                      </div>
-                    )}
-
-                    {selectedParticipant.life_reflection.values?.length > 0 && (
-                      <div>
-                        <h4 style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#4b5563',
-                          marginBottom: '5px'
-                        }}>
-                          大切にしている価値観
-                        </h4>
-                        <ul style={{ margin: 0, paddingLeft: '18px', color: '#374151' }}>
-                          {selectedParticipant.life_reflection.values.map((value, index) => (
-                            value.trim() && <li key={index} style={{ marginBottom: '2px' }}>{value}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p style={{ color: '#9ca3af', fontSize: '12px' }}>
-                    Life Reflectionのデータがありません
-                  </p>
-                )}
-              </div>
-
-              {/* インタビューメモ */}
-              <div style={{
-                flex: '0 0 30%',
+                flex: '1 1 auto',
                 padding: '30px 40px',
                 overflowY: 'auto',
                 borderBottom: '1px solid #e5e7eb',
-                backgroundColor: '#fefce8'
+                backgroundColor: 'white',
+                minHeight: '400px'
               }}>
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '12px'
+                  marginBottom: '12px',
+                  paddingRight: '60px'
                 }}>
                   <h3 style={{
                     fontSize: '18px',
@@ -1240,7 +1440,8 @@ const AdminDashboard = () => {
                       border: 'none',
                       borderRadius: '6px',
                       cursor: isSavingMemo ? 'not-allowed' : 'pointer',
-                      opacity: isSavingMemo ? 0.6 : 1
+                      opacity: isSavingMemo ? 0.6 : 1,
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     {isSavingMemo ? '保存中...' : '💾 保存'}
@@ -1258,35 +1459,125 @@ const AdminDashboard = () => {
               <div style={{
                 flex: '0 0 auto',
                 padding: '20px 40px',
-                backgroundColor: '#f9fafb'
+                backgroundColor: '#f9fafb',
+                borderBottom: '1px solid #e5e7eb'
               }}>
-                <button
-                  onClick={() => setShowDebugText(!showDebugText)}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    backgroundColor: '#374151',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    marginBottom: showDebugText ? '15px' : 0
-                  }}
-                >
-                  {showDebugText ? '📋 MD形式データを非表示' : '📋 MD形式データを表示'}
-                </button>
-
-                {showDebugText && (
+                {/* データ表示ボタン群 */}
+                {!showDebugText ? (
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => handleShowDebugText(true)}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        backgroundColor: '#374151',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📋 完全データ
+                    </button>
+                    <button
+                      onClick={() => handleShowDebugText(false)}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        backgroundColor: '#6b7280',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📊 創造性データ
+                    </button>
+                  </div>
+                ) : (
                   <div>
+                    {/* 表示中のコントロール */}
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                      <button
+                        onClick={handleRefreshDebugText}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🔄 最新情報に更新
+                      </button>
+                      <button
+                        onClick={() => setIncludeLifeReflection(!includeLifeReflection)}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          backgroundColor: includeLifeReflection ? '#374151' : '#6b7280',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {includeLifeReflection ? '📋 完全版' : '📊 創造性のみ'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const newMode = !includeLifeReflection;
+                          setIncludeLifeReflection(newMode);
+                          handleShowDebugText(newMode);
+                        }}
+                        style={{
+                          padding: '10px 15px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          backgroundColor: 'white',
+                          color: '#374151',
+                          border: '2px solid #d1d5db',
+                          borderRadius: '8px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        切替
+                      </button>
+                      <button
+                        onClick={() => setShowDebugText(false)}
+                        style={{
+                          padding: '10px 15px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          backgroundColor: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        閉じる
+                      </button>
+                    </div>
+
+                    {/* データ表示エリア */}
                     <textarea
-                      value={generateDebugText(selectedParticipant)}
+                      value={debugText}
                       readOnly
                       onClick={(e) => e.target.select()}
                       style={{
                         width: '100%',
-                        height: '150px',
+                        height: '200px',
                         padding: '15px',
                         fontSize: '12px',
                         fontFamily: 'monospace',
@@ -1310,6 +1601,198 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* キーワードスワイプ履歴モーダル */}
+      {showSwipeHistory && selectedDimension && (
+        <div
+          onClick={() => setShowSwipeHistory(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '0',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              position: 'relative'
+            }}
+          >
+            {/* ヘッダー */}
+            <div style={{
+              backgroundColor: '#374151',
+              padding: '20px 30px',
+              borderRadius: '16px 16px 0 0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '700',
+                color: '#ffffff',
+                margin: 0
+              }}>
+                {selectedDimension.dimension}軸のキーワードスワイプ履歴
+              </h3>
+              <button
+                onClick={() => setShowSwipeHistory(false)}
+                style={{
+                  fontSize: '24px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#ffffff',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* 軸の説明 */}
+            <div style={{
+              padding: '20px 30px',
+              backgroundColor: '#f9fafb',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              <div style={{
+                fontSize: '14px',
+                color: '#6b7280',
+                marginBottom: '8px'
+              }}>
+                極の構成
+              </div>
+              <div style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#1f2937'
+              }}>
+                {selectedDimension.pole_a} ↔ {selectedDimension.pole_b}
+              </div>
+            </div>
+
+            {/* スワイプ履歴リスト */}
+            <div style={{
+              padding: '20px 30px',
+              maxHeight: 'calc(80vh - 200px)',
+              overflowY: 'auto'
+            }}>
+              {getSwipeHistoryForDimension(selectedDimension.dimension).length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: '#9ca3af',
+                  fontSize: '14px'
+                }}>
+                  この軸のスワイプ履歴がありません
+                </div>
+              ) :
+                getSwipeHistoryForDimension(selectedDimension.dimension).map((item, index) => {
+                  // 背景色とボーダー色を決定
+                  const getBackgroundColor = () => {
+                    if (item.direction === 'match') return '#f0fdf4';
+                    if (item.direction === 'neither') return '#fef9e7';
+                    return '#fef2f2';
+                  };
+
+                  const getBorderColor = () => {
+                    if (item.direction === 'match') return '#86efac';
+                    if (item.direction === 'neither') return '#fbbf24';
+                    return '#fecaca';
+                  };
+
+                  const getBadgeColor = () => {
+                    if (item.direction === 'match') return '#22c55e';
+                    if (item.direction === 'neither') return '#f59e0b';
+                    return '#ef4444';
+                  };
+
+                  const getDirectionText = () => {
+                    if (item.direction === 'match') return '当てはまる';
+                    if (item.direction === 'neither') return 'どちらもあてはまる';
+                    return '当てはまらない';
+                  };
+
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        marginBottom: '15px',
+                        padding: '15px',
+                        backgroundColor: getBackgroundColor(),
+                        border: `2px solid ${getBorderColor()}`,
+                        borderRadius: '8px'
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '8px'
+                      }}>
+                        <div>
+                          <div style={{
+                            fontSize: '16px',
+                            fontWeight: '700',
+                            color: '#1f2937',
+                            marginBottom: '4px'
+                          }}>
+                            {item.keyword}
+                          </div>
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#6b7280'
+                          }}>
+                            極: {item.pole}
+                          </div>
+                        </div>
+                        <div style={{
+                          padding: '4px 12px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          backgroundColor: getBadgeColor(),
+                          color: 'white'
+                        }}>
+                          {getDirectionText()}
+                        </div>
+                      </div>
+                    <div style={{
+                      fontSize: '16px',
+                      color: '#1f2937',
+                      fontWeight: '500'
+                    }}>
+                      vs {item.compareTo}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -75,7 +75,7 @@ const Type2DiagnosisFlow = ({ onComplete, onBack }) => {
       {/* 戻るボタン + プログレスバー */}
       <div style={{
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '800px',
         marginBottom: '30px',
         marginTop: '40px',
         display: 'flex',
@@ -152,7 +152,7 @@ const Type2DiagnosisFlow = ({ onComplete, onBack }) => {
         /* インストラクションページ */
         <div style={{
           width: '100%',
-          maxWidth: '600px',
+          maxWidth: '800px',
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
           borderRadius: '20px',
           padding: '40px',
@@ -198,7 +198,7 @@ const Type2DiagnosisFlow = ({ onComplete, onBack }) => {
           {/* 軸の説明カード */}
           <div style={{
             width: '100%',
-            maxWidth: '600px',
+            maxWidth: '800px',
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '20px',
             padding: '30px',
@@ -241,7 +241,7 @@ const Type2DiagnosisFlow = ({ onComplete, onBack }) => {
       {/* ナビゲーションボタン */}
       <div style={{
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '800px',
         display: 'flex',
         gap: '16px',
         marginTop: '40px'

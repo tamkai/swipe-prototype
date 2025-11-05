@@ -25,6 +25,63 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
       };
       text += `- 創造体験レベル: ${experiencePercentage}% (${getExperienceLevel(basicInfo.creativeExperience)})\n\n`;
       text += '---\n\n';
+
+      // Life Reflection
+      if (basicInfo.lifeReflection) {
+        text += `## Life Reflection（人生振り返り）\n\n`;
+
+        const lr = basicInfo.lifeReflection;
+
+        // 年代ごとの振り返り
+        if (lr.age_0_10) {
+          text += `### 0〜10歳\n`;
+          lr.age_0_10.forEach((item, index) => {
+            if (item.trim()) {
+              text += `${index + 1}. ${item}\n`;
+            }
+          });
+          text += '\n';
+        }
+
+        if (lr.age_11_20) {
+          text += `### 11〜20歳\n`;
+          lr.age_11_20.forEach((item, index) => {
+            if (item.trim()) {
+              text += `${index + 1}. ${item}\n`;
+            }
+          });
+          text += '\n';
+        }
+
+        if (lr.age_21_now) {
+          text += `### 21歳〜現在\n`;
+          lr.age_21_now.forEach((item, index) => {
+            if (item.trim()) {
+              text += `${index + 1}. ${item}\n`;
+            }
+          });
+          text += '\n';
+        }
+
+        // キャリア選択理由
+        if (lr.careerReason && lr.careerReason.trim()) {
+          text += `### 現在のキャリアを選んだ理由\n`;
+          text += `${lr.careerReason}\n\n`;
+        }
+
+        // 大切な価値観
+        if (lr.values) {
+          text += `### 大切にしている価値観\n`;
+          lr.values.forEach((value, index) => {
+            if (value.trim()) {
+              text += `${index + 1}. ${value}\n`;
+            }
+          });
+          text += '\n';
+        }
+
+        text += '---\n\n';
+      }
     }
 
     dimensionsData.forEach((dimension) => {
@@ -103,7 +160,7 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
       {/* 8軸スライダー */}
       <div style={{
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '800px',
         padding: '0 15px',
         boxSizing: 'border-box',
         display: 'flex',
@@ -138,7 +195,7 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
       {/* 解釈文エリア（プレースホルダー） */}
       <div style={{
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '800px',
         padding: '30px',
         backgroundColor: 'white',
         borderRadius: '20px',
@@ -187,7 +244,7 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
         gap: '15px',
         marginTop: '20px',
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '800px',
         padding: '0 20px',
         boxSizing: 'border-box'
       }}>

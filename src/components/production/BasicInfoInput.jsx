@@ -1,17 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
-const BasicInfoInput = ({ onComplete }) => {
+const BasicInfoInput = ({ onComplete, onDebugMenu }) => {
   const [name, setName] = useState('');
   const [title, setTitle] = useState('');
-  const [creativeExperience, setCreativeExperience] = useState(0.5);
-  const [isDragging, setIsDragging] = useState(false);
-
-  // スライダーつまみの色を計算
-  const getColorForValue = useCallback((val) => {
-    if (val >= 0.4 && val <= 0.6) return '#9ca3af'; // グレー
-    else if (val < 0.4) return '#3b82f6';            // 青
-    else return '#ef4444';                           // 赤
-  }, []);
 
   const handleSubmit = () => {
     if (!name.trim()) {
@@ -21,8 +12,7 @@ const BasicInfoInput = ({ onComplete }) => {
 
     onComplete({
       name: name.trim(),
-      title: title.trim(),
-      creativeExperience
+      title: title.trim()
     });
   };
 
@@ -33,34 +23,72 @@ const BasicInfoInput = ({ onComplete }) => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
       padding: '40px 20px',
-      boxSizing: 'border-box'
+      paddingTop: '60px',
+      boxSizing: 'border-box',
+      gap: '30px',
+      overflowY: 'auto'
     }}>
+      {/* ロゴとタイトル */}
+      <div style={{
+        textAlign: 'center'
+      }}>
+        {/* ロゴ */}
+        <div style={{
+          marginBottom: '16px',
+          display: 'flex',
+          justifyContent: 'center'
+        }}>
+          <svg width="120" height="auto" viewBox="0 0 230.68 313.8" fill="white" style={{
+            filter: 'drop-shadow(0 2px 10px rgba(0, 0, 0, 0.3))'
+          }}>
+            <g>
+              <circle cx="147.08" cy="88.77" r="63.61"/>
+              <circle cx="60.14" cy="172.72" r="37.49"/>
+              <circle cx="120.93" cy="219.87" r="21.24"/>
+            </g>
+            <g>
+              <path d="M52.88,291.67h-7.06l-.96,5.13h-5.13l5.78-30.81h7.7l5.78,30.81h-5.13l-.96-5.13ZM51.91,286.54l-2.57-13.69-2.57,13.69h5.13Z"/>
+              <path d="M68.75,271.13v6.42h8.99v5.13h-8.99v14.12h-5.13v-30.81h15.4v5.13h-10.27Z"/>
+              <path d="M88.79,271.13v6.42h8.99v5.13h-8.99v14.12h-5.13v-30.81h15.4v5.13h-10.27Z"/>
+              <path d="M115.37,291.67v5.13h-12.84v-30.81h5.13v25.67h7.7Z"/>
+              <path d="M132.01,291.67h-7.06l-.96,5.13h-5.13l5.78-30.81h7.7l5.78,30.81h-5.13l-.96-5.13ZM131.05,286.54l-2.57-13.69-2.57,13.69h5.13Z"/>
+              <path d="M154.67,271.13h-5.13v25.67h-5.13v-25.67h-5.13v-5.13h15.4v5.13Z"/>
+              <path d="M173.56,266v23.11c0,4.25-3.45,7.7-7.7,7.7s-7.7-3.45-7.7-7.7v-23.11h5.13v23.11c0,1.42,1.15,2.57,2.57,2.57s2.57-1.15,2.57-2.57v-23.11h5.13Z"/>
+              <path d="M193.61,289.1c0,4.25-3.45,7.7-7.7,7.7s-7.7-3.45-7.7-7.7v-2.57h5.13v2.57c0,1.42,1.15,2.57,2.57,2.57s2.57-1.15,2.57-2.57c0,0,0-.46-.11-.94-.09-.43-.71-2.25-3.91-4.86-6.76-5.51-6.25-8.68-6.25-9.61,0-4.25,3.45-7.7,7.7-7.7s7.7,3.45,7.7,7.7v2.57h-5.13v-2.57c0-1.42-1.15-2.57-2.57-2.57s-2.57,1.15-2.57,2.57c0,0,0,.46.11.94.09.43.71,2.25,3.91,4.86,6.76,5.51,6.25,8.68,6.25,9.61Z"/>
+            </g>
+          </svg>
+        </div>
+
+        <h1 style={{
+          color: 'white',
+          fontSize: 'clamp(28px, 8vw, 36px)',
+          fontWeight: '800',
+          marginBottom: '16px',
+          textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+          whiteSpace: 'nowrap'
+        }}>
+          AFFLATUS創造性診断
+        </h1>
+      </div>
+
       <div style={{
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '800px',
         backgroundColor: 'white',
         borderRadius: '24px',
         padding: '40px 30px',
         boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
         boxSizing: 'border-box'
       }}>
-        {/* タイトル */}
-        <h1 style={{
-          fontSize: '28px',
-          fontWeight: '800',
-          color: '#1f2937',
-          marginBottom: '10px',
-          textAlign: 'center'
-        }}>
-          AFFLATUS創造性診断
-        </h1>
+        {/* サブタイトル */}
         <p style={{
           fontSize: '16px',
           color: '#6b7280',
           marginBottom: '40px',
-          textAlign: 'center'
+          textAlign: 'center',
+          fontWeight: '600'
         }}>
           診断を始める前に
         </p>
@@ -89,7 +117,9 @@ const BasicInfoInput = ({ onComplete }) => {
               borderRadius: '12px',
               outline: 'none',
               transition: 'border-color 0.2s',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              backgroundColor: 'white',
+              color: '#1f2937'
             }}
             onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
             onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
@@ -119,7 +149,9 @@ const BasicInfoInput = ({ onComplete }) => {
               borderRadius: '12px',
               outline: 'none',
               transition: 'border-color 0.2s',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              backgroundColor: 'white',
+              color: '#1f2937'
             }}
             onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
             onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
@@ -134,125 +166,7 @@ const BasicInfoInput = ({ onComplete }) => {
           </p>
         </div>
 
-        {/* 区切り線 */}
-        <div style={{
-          height: '1px',
-          backgroundColor: '#e5e7eb',
-          margin: '40px 0'
-        }} />
-
-        {/* 創造性についての質問 */}
-        <div style={{ marginBottom: '30px' }}>
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#1f2937',
-            marginBottom: '20px'
-          }}>
-            【創造性についてお聞きします】
-          </h2>
-
-          <p style={{
-            fontSize: '16px',
-            color: '#374151',
-            lineHeight: '1.8',
-            marginBottom: '10px',
-            fontWeight: '500'
-          }}>
-            「正解がわからないことでも、試行錯誤しながら形にする」
-          </p>
-
-          <p style={{
-            fontSize: '16px',
-            color: '#374151',
-            lineHeight: '1.8',
-            marginBottom: '20px'
-          }}>
-            そんな経験を、今までどれくらいしてきたと思いますか？
-          </p>
-
-          <div style={{
-            backgroundColor: '#f9fafb',
-            padding: '16px',
-            borderRadius: '12px',
-            marginBottom: '30px'
-          }}>
-            <p style={{
-              fontSize: '14px',
-              color: '#6b7280',
-              lineHeight: '1.7',
-              margin: 0
-            }}>
-              ※大小は問いません。小さな工夫でも、試行錯誤した経験でもOKです。
-              <br />
-              ※創造性には色々な形があります。この後の診断で、あなたらしい創造性のスタイルがわかります。
-            </p>
-          </div>
-
-          {/* スライダー */}
-          <div style={{
-            position: 'relative',
-            padding: '20px 0'
-          }}>
-            {/* カスタムつまみ */}
-            <div
-              style={{
-                position: 'absolute',
-                left: `calc(${creativeExperience * 100}% - 14px)`,
-                top: '11px',
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                backgroundColor: getColorForValue(creativeExperience),
-                border: '3px solid white',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-                pointerEvents: 'none',
-                transition: 'transform 0.15s ease',
-                transform: isDragging ? 'scale(1.1)' : 'scale(1)',
-                zIndex: 20
-              }}
-            />
-
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={creativeExperience * 100}
-              onChange={(e) => setCreativeExperience(e.target.value / 100)}
-              onMouseDown={() => setIsDragging(true)}
-              onMouseUp={() => setIsDragging(false)}
-              onTouchStart={() => setIsDragging(true)}
-              onTouchEnd={() => setIsDragging(false)}
-              className="creative-experience-slider"
-              style={{
-                width: '100%',
-                height: '8px',
-                background: 'linear-gradient(to right, #3b82f6 0%, #9ca3af 50%, #ef4444 100%)',
-                borderRadius: '4px',
-                outline: 'none',
-                WebkitAppearance: 'none',
-                appearance: 'none',
-                cursor: 'pointer',
-                position: 'relative',
-                zIndex: 10
-              }}
-            />
-
-            {/* ラベル */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '12px',
-              fontSize: '14px',
-              color: '#6b7280'
-            }}>
-              <span>少ない</span>
-              <span>多い</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 開始ボタン */}
+        {/* 次へボタン */}
         <button
           onClick={handleSubmit}
           style={{
@@ -278,31 +192,41 @@ const BasicInfoInput = ({ onComplete }) => {
             e.target.style.transform = 'translateY(0)';
           }}
         >
-          診断を開始する
+          次へ →
         </button>
       </div>
 
-      {/* スライダーのスタイル */}
-      <style>{`
-        .creative-experience-slider::-webkit-slider-thumb {
-          opacity: 0;
-          width: 28px;
-          height: 28px;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          -webkit-appearance: none;
-        }
-
-        .creative-experience-slider::-moz-range-thumb {
-          opacity: 0;
-          width: 28px;
-          height: 28px;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-        }
-      `}</style>
+      {/* デバッグリンク（コンテンツエリア外） */}
+      {onDebugMenu && (
+        <div style={{
+          marginTop: '30px',
+          textAlign: 'center'
+        }}>
+          <button
+            onClick={onDebugMenu}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#9ca3af',
+              fontSize: '11px',
+              fontWeight: '400',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              padding: '4px',
+              opacity: 0.4,
+              transition: 'opacity 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.opacity = '0.7';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.opacity = '0.4';
+            }}
+          >
+            デバッグページ
+          </button>
+        </div>
+      )}
     </div>
   );
 };

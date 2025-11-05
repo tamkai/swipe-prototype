@@ -114,7 +114,7 @@ const DimensionSlider = ({
   return (
     <div style={{
       width: '100%',
-      maxWidth: '600px',
+      maxWidth: '800px',
       backgroundColor: 'white',
       borderRadius: '20px',
       boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
@@ -196,8 +196,11 @@ const DimensionSlider = ({
         </div>
 
 
-        {/* スライダー軸 */}
+        {/* スライダー軸コンテナ（600px中央配置） */}
         <div style={{
+          width: '100%',
+          maxWidth: '600px',
+          margin: '0 auto',
           position: 'relative',
           height: '60px',
           display: 'flex',
@@ -336,8 +339,11 @@ const DimensionSlider = ({
           )}
         </div>
 
-        {/* キーワード表示（バーの下、2x2行） */}
+        {/* キーワード表示（バーの下、2x2行）600px中央配置 */}
         <div style={{
+          width: '100%',
+          maxWidth: '600px',
+          margin: '0 auto',
           display: 'flex',
           justifyContent: 'space-between',
           marginTop: '15px',
@@ -389,14 +395,16 @@ const DimensionSlider = ({
         </div>
       </div>
 
-      {/* 現在の位置表示 */}
+      {/* 現在の位置表示（600px中央配置） */}
       {showPositionText && (
         <motion.div
           animate={{
             scale: isDragging ? 1.05 : 1
           }}
           style={{
-            marginTop: '20px',
+            width: '100%',
+            maxWidth: '600px',
+            margin: '20px auto 0',
             padding: '15px',
             backgroundColor: '#f3f4f6',
             borderRadius: '10px',

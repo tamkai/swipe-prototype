@@ -148,6 +148,12 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
     setPhase('instruction');
   };
 
+  // Life Reflectionスキップ時
+  const handleLifeReflectionSkip = () => {
+    // Life Reflectionをスキップして直接インストラクション画面へ
+    setPhase('instruction');
+  };
+
   // スライダーの色を計算
   const getColorForValue = useCallback((val) => {
     if (val >= 0.4 && val <= 0.6) return '#9ca3af'; // グレー
@@ -167,13 +173,14 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
   };
 
   if (phase === 'basicInfo') {
-    return <BasicInfoInput onComplete={handleBasicInfoComplete} />;
+    return <BasicInfoInput onComplete={handleBasicInfoComplete} onDebugMenu={onBack} />;
   }
 
   if (phase === 'lifeReflection') {
     return (
       <PurposeCarvingFlow
         onComplete={handleLifeReflectionComplete}
+        onSkip={handleLifeReflectionSkip}
       />
     );
   }
@@ -229,7 +236,7 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
             textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
             whiteSpace: 'nowrap'
           }}>
-            AFFLATUS創造性診断
+            創造性診断
           </h1>
           <p style={{
             color: 'rgba(255, 255, 255, 0.9)',
@@ -455,7 +462,7 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
             gap: '12px'
           }}>
             <button
-              onClick={onBack}
+              onClick={() => setPhase('basicInfo')}
               style={{
                 flex: 1,
                 padding: '16px 24px',

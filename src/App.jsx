@@ -58,7 +58,8 @@ function App() {
         selectedPattern !== 'resultsTest' &&
         selectedPattern !== 'type2Diagnosis' &&
         selectedPattern !== 'integratedDiagnosis' &&
-        selectedPattern !== 'purposeCarving') {
+        selectedPattern !== 'purposeCarving' &&
+        selectedPattern !== 'debugMenu') {
       document.body.classList.add('swipe-active');
     } else {
       document.body.classList.remove('swipe-active');
@@ -144,9 +145,14 @@ function App() {
   };
 
   return (
-    <div className={`app ${!selectedPattern ? 'select-mode' : selectedPattern === 'sliderTest' || selectedPattern === 'resultsTest' || selectedPattern === 'type2Diagnosis' || selectedPattern === 'integratedDiagnosis' ? 'select-mode' : isComplete && selectedPattern === 'keywordSwipe' ? 'results-mode' : 'swipe-mode'}`}>
+    <div className={`app ${!selectedPattern ? 'select-mode' : selectedPattern === 'sliderTest' || selectedPattern === 'resultsTest' || selectedPattern === 'type2Diagnosis' || selectedPattern === 'integratedDiagnosis' || selectedPattern === 'debugMenu' ? 'select-mode' : isComplete && selectedPattern === 'keywordSwipe' ? 'results-mode' : 'swipe-mode'}`}>
       {!selectedPattern ? (
-        // パターン選択画面
+        // 統合診断フロー（デフォルトのトップページ）
+        <IntegratedDiagnosisFlow
+          onBack={() => setSelectedPattern('debugMenu')}
+        />
+      ) : selectedPattern === 'debugMenu' ? (
+        // デバッグメニュー（旧パターン選択画面）
         <PatternSelector onSelectPattern={handlePatternSelect} />
       ) : selectedPattern === 'resultsTest' ? (
         // 結果画面テスト

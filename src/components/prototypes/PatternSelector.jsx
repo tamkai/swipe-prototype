@@ -117,6 +117,40 @@ const PatternSelector = ({ onSelectPattern }) => {
 
   return (
     <div className="pattern-selector">
+      {/* 戻るボタン */}
+      <button
+        onClick={() => window.location.href = '/'}
+        style={{
+          position: 'fixed',
+          top: '20px',
+          left: '20px',
+          width: '44px',
+          height: '44px',
+          borderRadius: '50%',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+          zIndex: 1000,
+          transition: 'all 0.2s'
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.backgroundColor = 'white';
+          e.target.style.transform = 'scale(1.05)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+          e.target.style.transform = 'scale(1)';
+        }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+
       <div className="pattern-header">
         <h1>スワイプUIテスト</h1>
         <p>パターンを選択してください</p>

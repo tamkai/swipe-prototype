@@ -194,9 +194,9 @@ const RichTextEditor = ({ value, onChange, placeholder = 'メモを入力...' })
           }}
           onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
           onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-          title="書式をクリア"
+          title="選択したテキストの書式を削除"
         >
-          ✕ クリア
+          書式削除
         </button>
       </div>
 
