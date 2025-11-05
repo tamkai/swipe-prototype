@@ -80,7 +80,13 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
   };
 
   // タイプ2診断完了時
-  const handleType2Complete = async (results) => {
+  const handleType2Complete = useCallback(async (results) => {
+    // 既に保存中または保存済みの場合はスキップ
+    if (isSaving || type2Results) {
+      console.log('重複保存をスキップ');
+      return;
+    }
+
     setType2Results(results);
     setIsSaving(true);
 
@@ -105,7 +111,7 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
 
     setIsSaving(false);
     setPhase('results');
-  };
+  }, [isSaving, type2Results, sessionId, basicInfo, type1Results, swipeHistory]);
 
   // インストラクション画面から診断開始
   const handleStartDiagnosis = () => {

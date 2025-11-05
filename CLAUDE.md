@@ -1874,15 +1874,176 @@ const absoluteScore = Math.abs(value - 0.5) * 8;
 
 ---
 
-**更新日**: 2025-11-04
-**最終更新**: 管理画面インタビュー対応レイアウト完成
+## 🔐 管理画面認証とデプロイ完了（2025-11-05）
+
+### 実装内容
+
+#### 1. 管理画面パスワード認証 ✅
+**目的**: 管理画面へのアクセス制限
+
+**実装内容**:
+- ログイン画面の追加
+- パスワード: `afflatus2025`（ハードコード）
+- 認証成功後に管理画面表示
+- シンプルなフォームデザイン（白いカード、グレーグラデーション背景）
+
+**ファイル**: [AdminDashboard.jsx](src/components/admin/AdminDashboard.jsx)
+```javascript
+const [isAuthenticated, setIsAuthenticated] = useState(false);
+const [password, setPassword] = useState('');
+const ADMIN_PASSWORD = 'afflatus2025';
+
+const handleLogin = (e) => {
+  e.preventDefault();
+  if (password === ADMIN_PASSWORD) {
+    setIsAuthenticated(true);
+  } else {
+    alert('パスワードが正しくありません');
+  }
+};
+```
+
+**セキュリティ上の注意**:
+- 現在はハードコードされたパスワード
+- より強固なセキュリティが必要な場合は環境変数やSupabase認証を検討
+
+#### 2. トップページに管理画面リンク追加 ✅
+**位置**: BasicInfoInput下部（デバッグページリンクの上）
+**表示**: 「管理画面（PC専用）」
+**スタイル**: デバッグリンクと同じ控えめなスタイル（グレー、低opacity）
+
+**ファイル**: [BasicInfoInput.jsx](src/components/production/BasicInfoInput.jsx)
+
+#### 3. ページタイトル変更 ✅
+**変更前**: `swipe-prototype`
+**変更後**: `AFFLATUS創造性診断`
+
+**ファイル**: [index.html](index.html)
+
+#### 4. RichTextEditorボタンラベル改善 ✅
+**変更前**: 「✕ クリア」
+**変更後**: 「書式削除」
+**理由**: 「クリア」だとメモ全削除と誤解される可能性があるため
+
+**ファイル**: [RichTextEditor.jsx](src/components/admin/RichTextEditor.jsx)
+
+### Netlifyデプロイ設定
+
+#### 環境変数設定 ✅
+Netlifyダッシュボード → Site configuration → Environment variables
+
+```
+VITE_SUPABASE_URL=https://ppsbjozfkoojvkdrmrfu.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGci...（長いトークン）
+```
+
+#### SPAルーティング対応 ✅
+**ファイル**: [public/_redirects](public/_redirects)
+```
+/*    /index.html   200
+```
+
+これにより、React Routerのクライアントサイドルーティングが正常に動作します。
+
+### 公開URL
+- **診断サイト**: https://afflatus-test01.netlify.app/
+- **管理画面**: https://afflatus-test01.netlify.app/admin
+  - パスワード: `afflatus2025`
+
+### デプロイ手順（今後の更新時）
+```bash
+# コード修正後
+git add -A
+git commit -m "修正内容"
+git push origin main
+# → Netlifyが自動的に再デプロイ（1〜2分）
+```
+
+### トラブルシューティング
+
+**問題**: Netlifyで真っ白な画面が表示される
+**原因**: 環境変数（Supabase）が設定されていない
+**解決**:
+1. Netlify → Site configuration → Environment variables
+2. `VITE_SUPABASE_URL` と `VITE_SUPABASE_ANON_KEY` を追加
+3. Trigger deploy（手動再デプロイ）
+
+**問題**: ページリフレッシュで404エラー
+**原因**: `_redirects` ファイルがない
+**解決**: `public/_redirects` に `/* /index.html 200` を追加
+
+### 管理画面の主要機能（完成版）
+
+#### 参加者一覧
+- カード形式で表示
+- 📝 メモありアイコン（インタビューメモが保存されている場合）
+- 🟠 オレンジ枠線（ギャップ1.2以上がある参加者）
+
+#### 詳細モーダル（60:40レイアウト）
+**左側（60%）**:
+1. 基本情報（名前、肩書き、創造体験レベル）
+2. 個人のパーパス（編集可能）
+3. 大切にしている価値観（3つ、編集可能）
+4. Life Reflection（年代別振り返り、キャリア理由）
+5. 合計値TOP3（Type1×Type2で一貫している特性）
+6. Type1 極TOP3、Type2 極TOP3、大きなギャップ（3列グリッド）
+7. 創造性プロファイル（8軸テーブル、0-4スケール）
+
+**右側（40%）**:
+1. インタビューメモ（リッチテキストエディタ）
+   - 太字、斜体、下線、箇条書き、リンク挿入
+   - 書式削除ボタン
+   - 保存ボタン
+2. MDデータ表示（折りたたみ可能）
+   - 完全データ / 創造性データの切り替え
+   - 最新情報に更新ボタン
+   - Gemini API用の構造化テキスト
+
+### Git履歴
+
+```bash
+# 最新のコミット
+19327e6 - Add admin authentication and improve UI (2025-11-05)
+c418bcc - Add Netlify _redirects for SPA routing (2025-11-05)
+c4269a5 - Enhance admin dashboard and improve UX flow (2025-11-05)
+```
+
+### 検証済み機能
+✅ 管理画面パスワード認証
+✅ トップページからの管理画面リンク
+✅ Netlify環境変数設定
+✅ SPAルーティング（_redirects）
+✅ ページタイトル変更
+✅ RichTextEditorボタンラベル改善
+✅ 公開サイトでの動作確認
+
+### 次回実装予定
+
+1. **管理画面の機能拡張**（優先度未定）
+   - Type1キーワード詳細のポップアップ化
+   - フィルタリング機能（特定の軸でギャップが大きい人を抽出）
+   - ページネーション（参加者が増えた場合）
+
+2. **セキュリティ強化**（必要に応じて）
+   - 環境変数によるパスワード管理
+   - Supabase認証との統合
+   - セッション管理
+
+3. **診断フローの改善**（ユーザーフィードバック待ち）
+   - 現在のフローは完成形に近い
+   - 追加要望があれば対応
+
+---
+
+**更新日**: 2025-11-05
+**最終更新**: 管理画面認証とNetlifyデプロイ完了
 **セッション内容**:
-- 左右分割レイアウト（60:40）実装とユーザーテスト
-- Life Reflectionの年代別表示（データ配列変換バグの解決）
-- TOP3とギャップの表示形式変更（0-4スケール統一）
-- 創造性プロファイルテーブルの改善（極表記、0-4スケール）
-- モノトーンカラースキームへの統一
-- 各種UIバグ修正（閉じるボタン、保存ボタンの重なり、謎の閉じタグなど）
-- ユーザーフィードバックに基づく10回以上の微調整
-**次回セッション**: 追加フィードバックがあれば微調整、なければ次の機能開発へ
+- 管理画面パスワード認証実装（password: afflatus2025）
+- トップページに管理画面リンク追加
+- ページタイトル変更（AFFLATUS創造性診断）
+- RichTextEditorボタンラベル改善（書式削除）
+- Netlify環境変数設定とデプロイ
+- SPAルーティング対応（_redirects）
+- 公開サイトでの動作確認完了
+**次回セッション**: 管理画面の機能拡張、またはユーザーフィードバックに基づく改善
 **作成者**: tamkai + Claude Code

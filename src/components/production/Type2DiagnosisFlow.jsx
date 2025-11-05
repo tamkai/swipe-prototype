@@ -24,8 +24,12 @@ const Type2DiagnosisFlow = ({ onComplete, onBack }) => {
 
   const handleNext = () => {
     if (isLastStep) {
-      // 最後のステップ：結果を返す
-      onComplete(results);
+      // 最後のステップ：現在の値を含めた最終結果を返す
+      const finalResults = {
+        ...results,
+        [currentDimension.id]: currentValue
+      };
+      onComplete(finalResults);
     } else {
       // 次のステップへ
       const nextStep = currentStep + 1;
