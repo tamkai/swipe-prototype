@@ -5,6 +5,8 @@ import RichTextEditor from './RichTextEditor';
 import sampleData from '../../../scripts/sampleData.json';
 
 const AdminDashboard = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
@@ -14,6 +16,20 @@ const AdminDashboard = () => {
   const [memo, setMemo] = useState('');
   const [isSavingMemo, setIsSavingMemo] = useState(false);
   const [usingSampleData, setUsingSampleData] = useState(false);
+
+  // 簡易パスワード認証（本番環境では環境変数から取得）
+  const ADMIN_PASSWORD = 'afflatus2025';
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setPassword('');
+    } else {
+      alert('パスワードが正しくありません');
+      setPassword('');
+    }
+  };
 
   // キーワードスワイプ履歴表示用
   const [showSwipeHistory, setShowSwipeHistory] = useState(false);
@@ -566,6 +582,87 @@ const AdminDashboard = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // 認証チェック
+  if (!isAuthenticated) {
+    return (
+      <div style={{
+        width: '100%',
+        minHeight: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: 'linear-gradient(135deg, #4b5563 0%, #374151 100%)'
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          padding: '40px',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+          width: '100%',
+          maxWidth: '400px'
+        }}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#1f2937',
+            marginBottom: '24px',
+            textAlign: 'center'
+          }}>
+            管理画面ログイン
+          </h2>
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                パスワード
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="パスワードを入力"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                autoFocus
+              />
+            </div>
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                padding: '14px',
+                fontSize: '16px',
+                fontWeight: '700',
+                color: 'white',
+                backgroundColor: '#3b82f6',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#2563eb'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#3b82f6'}
+            >
+              ログイン
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
