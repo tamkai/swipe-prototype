@@ -281,7 +281,7 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
         </p>
       </div>
 
-      {/* アクションボタン */}
+      {/* メタクリラジオ紹介 */}
       <div style={{
         display: 'flex',
         flexDirection: 'column',
@@ -292,6 +292,33 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
         padding: '0 20px',
         boxSizing: 'border-box'
       }}>
+        {/* 説明テキスト（吹き出し） */}
+        <div style={{
+          position: 'relative',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: '16px',
+          padding: '24px',
+          fontSize: '15px',
+          lineHeight: '1.8',
+          color: '#4b5563'
+        }}>
+          {/* 吹き出しの三角形（右上） */}
+          <div style={{
+            position: 'absolute',
+            top: '-10px',
+            right: '40px',
+            width: 0,
+            height: 0,
+            borderLeft: '12px solid transparent',
+            borderRight: '12px solid transparent',
+            borderBottom: '12px solid rgba(255, 255, 255, 0.95)'
+          }} />
+
+          <p style={{ margin: 0 }}>
+            レポートを待っている間に、メタクリ創造性診断を開発した<strong>タムカイとOpi</strong>が、創造性についてあれこれ考えて語り合うポッドキャスト番組があります！毎週月曜日更新、<strong>大里Pの編集後記</strong>もおもしろいよ！
+          </p>
+        </div>
+
         {/* メタクリラジオへのリンク */}
         <a
           href="https://metacreativeradio.github.io/"
@@ -301,28 +328,28 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
             padding: '16px 32px',
             fontSize: '18px',
             fontWeight: '700',
-            backgroundColor: 'white',
-            color: '#374151',
+            backgroundColor: '#f59e0b',
+            color: 'white',
             border: 'none',
             borderRadius: '16px',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
             textDecoration: 'none',
             textAlign: 'center',
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f9fafb';
+            e.currentTarget.style.backgroundColor = '#d97706';
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.25)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(217, 119, 6, 0.4)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'white';
+            e.currentTarget.style.backgroundColor = '#f59e0b';
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
           }}
         >
-          🎙️ 創造性についてメタに考える「メタクリラジオ」
+          🎙️ メタクリラジオを聴いてみる
         </a>
       </div>
     </div>
