@@ -185,8 +185,8 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
             onClick={() => handleButtonClick('match')}
             style={{
               flex: 1,
-              padding: '16px 24px',
-              fontSize: '20px',
+              padding: '16px 20px',
+              fontSize: 'clamp(16px, 5vw, 20px)',
               fontWeight: '700',
               backgroundColor: '#34d399',
               color: 'white',
@@ -206,8 +206,8 @@ const KeywordSwipeCard = ({ item, onSwipe }) => {
             onClick={() => handleButtonClick('not_match')}
             style={{
               flex: 1,
-              padding: '16px 24px',
-              fontSize: '20px',
+              padding: '16px 20px',
+              fontSize: 'clamp(16px, 5vw, 20px)',
               fontWeight: '700',
               backgroundColor: '#f97316',
               color: 'white',

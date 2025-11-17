@@ -88,7 +88,7 @@ const PatternSelector = ({ onSelectPattern }) => {
     },
     {
       id: 'integratedDiagnosis',
-      name: 'AFFLATUS創造性診断 ⭐NEW',
+      name: 'メタクリ創造性診断 ⭐NEW',
       description: 'タイプ1（直感判断）→ タイプ2（自己認識）の統合診断',
       preview: 'logo',
       category: '診断'

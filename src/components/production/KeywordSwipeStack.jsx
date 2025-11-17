@@ -59,13 +59,13 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
     return (
       <div style={{
         width: '100%',
-        minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         padding: '20px',
-        paddingBottom: '100px',
-        position: 'relative'
+        paddingBottom: '60px',
+        position: 'relative',
+        boxSizing: 'border-box'
       }}>
         {/* プログレスバー（0ページ目） */}
         <div style={{
@@ -166,7 +166,8 @@ const KeywordSwipeStack = ({ keywords, onComplete, onBack, isIntegratedMode = fa
           maxWidth: '800px',
           display: 'flex',
           gap: '16px',
-          marginTop: '40px'
+          marginTop: '40px',
+          marginBottom: '40px'
         }}>
           <button
             onClick={onBack}

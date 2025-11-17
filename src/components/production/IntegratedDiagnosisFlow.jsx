@@ -307,7 +307,7 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                🧠 タイプ2診断：自己認識（約4分）
+                🧠 タイプ2診断：自己認識（約3分）
               </h3>
               <p style={{ marginBottom: '8px' }}>
                 8つの軸について、説明を読みながら<strong>じっくり考えて</strong>自己評価してください。
@@ -527,98 +527,103 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
               cursor: pointer;
             }
           `}</style>
+        </div>
 
-          {/* デバッグ用ショートカット */}
+        {/* デバッグ用ショートカット（コンテンツ外） */}
+        <div style={{
+          width: '100%',
+          maxWidth: '800px',
+          marginTop: '20px',
+          paddingTop: '16px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.2)'
+        }}>
           <div style={{
-            marginTop: '24px',
-            paddingTop: '24px',
-            borderTop: '1px solid #e5e7eb'
+            fontSize: '11px',
+            color: 'rgba(255, 255, 255, 0.5)',
+            marginBottom: '8px',
+            textAlign: 'center'
           }}>
-            <div style={{
-              fontSize: '12px',
-              color: '#9ca3af',
-              marginBottom: '12px',
-              textAlign: 'center'
-            }}>
-              デバッグ・説明用
-            </div>
-            <div style={{
-              display: 'flex',
-              gap: '8px',
-              fontSize: '14px'
-            }}>
-              <button
-                onClick={() => setPhase('type1')}
-                style={{
-                  flex: 1,
-                  padding: '10px 16px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  backgroundColor: 'white',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
-                タイプ1のみ
-              </button>
-              <button
-                onClick={() => setPhase('type2')}
-                style={{
-                  flex: 1,
-                  padding: '10px 16px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  backgroundColor: 'white',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
-                タイプ2のみ
-              </button>
-              <button
-                onClick={() => {
-                  // サンプルデータを設定
-                  setType1Results({
-                    motivation: 0.7,
-                    generation: 0.3,
-                    progress: 0.6,
-                    value: 0.8,
-                    expression: 0.4,
-                    thinking: 0.5,
-                    execution: 0.7,
-                    collaboration: 0.2
-                  });
-                  setType2Results({
-                    motivation: 0.5,
-                    generation: 0.6,
-                    progress: 0.4,
-                    value: 0.7,
-                    expression: 0.3,
-                    thinking: 0.8,
-                    execution: 0.5,
-                    collaboration: 0.6
-                  });
-                  setPhase('results');
-                }}
-                style={{
-                  flex: 1,
-                  padding: '10px 16px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  backgroundColor: 'white',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
-                結果画面（サンプル）
-              </button>
-            </div>
+            デバッグ・説明用
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            fontSize: '12px'
+          }}>
+            <button
+              onClick={() => setPhase('type1')}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                fontSize: '12px',
+                fontWeight: '500',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: 'rgba(255, 255, 255, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                opacity: 0.7
+              }}
+            >
+              タイプ1のみ
+            </button>
+            <button
+              onClick={() => setPhase('type2')}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                fontSize: '12px',
+                fontWeight: '500',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: 'rgba(255, 255, 255, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                opacity: 0.7
+              }}
+            >
+              タイプ2のみ
+            </button>
+            <button
+              onClick={() => {
+                // サンプルデータを設定
+                setType1Results({
+                  motivation: 0.7,
+                  generation: 0.3,
+                  progress: 0.6,
+                  value: 0.8,
+                  expression: 0.4,
+                  thinking: 0.5,
+                  execution: 0.7,
+                  collaboration: 0.2
+                });
+                setType2Results({
+                  motivation: 0.5,
+                  generation: 0.6,
+                  progress: 0.4,
+                  value: 0.7,
+                  expression: 0.3,
+                  thinking: 0.8,
+                  execution: 0.5,
+                  collaboration: 0.6
+                });
+                setPhase('results');
+              }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                fontSize: '12px',
+                fontWeight: '500',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: 'rgba(255, 255, 255, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                opacity: 0.7
+              }}
+            >
+              結果画面（サンプル）
+            </button>
           </div>
         </div>
       </div>

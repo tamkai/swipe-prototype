@@ -8,7 +8,7 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
 
   // デバッグ用：診断データをテキスト形式で生成
   const generateDebugText = () => {
-    let text = '# AFFLATUS創造性診断 結果データ\n\n';
+    let text = '# メタクリ創造性診断 結果データ\n\n';
 
     // 基本情報
     if (basicInfo) {
@@ -146,15 +146,47 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
           marginBottom: '10px',
           textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
         }}>
-          Creative Compass
+          あなたの創造性バランス
         </h1>
         <p style={{
           color: 'rgba(255, 255, 255, 0.9)',
           fontSize: '18px',
-          fontWeight: '500'
+          fontWeight: '500',
+          letterSpacing: '0.05em'
         }}>
-          あなたの創造性プロファイル
+          Your Creativity Balance
         </p>
+      </div>
+
+      {/* 説明文 */}
+      <div style={{
+        width: '100%',
+        maxWidth: '800px',
+        padding: '0 20px',
+        marginBottom: '30px',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          fontSize: '15px',
+          lineHeight: '1.8',
+          color: '#374151'
+        }}>
+          <p style={{ margin: '0 0 16px 0' }}>
+            以下が、あなたの創造性のバランスを<strong>8つの軸</strong>で可視化したものです。
+          </p>
+          <p style={{ margin: '0 0 16px 0' }}>
+            従来の創造性診断が「創造性の有無」や「創造性の高低」を測定するのに対し、
+            メタクリ創造性診断は<strong>「創造性の多様性」と「個人の独自性」</strong>を可視化します。
+          </p>
+          <p style={{ margin: '0' }}>
+            数値の大小に優劣はありません。この結果は<strong>「直感判断」と「自己認識」の一致やズレ</strong>から、あなたの創造性を紐解いていくためのものです。<br />
+            その意味で、これはあなたらしい創造性の「かたち」です。
+          </p>
+        </div>
       </div>
 
       {/* 8軸スライダー */}
@@ -192,7 +224,7 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
         })}
       </div>
 
-      {/* 解釈文エリア（プレースホルダー） */}
+      {/* レポート案内エリア */}
       <div style={{
         width: '100%',
         maxWidth: '800px',
@@ -206,35 +238,47 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
           fontSize: '24px',
           fontWeight: 'bold',
           color: '#1f2937',
-          marginBottom: '20px',
+          marginBottom: '24px',
           display: 'flex',
           alignItems: 'center',
           gap: '10px'
         }}>
-          💡 あなたの創造性の特徴
+          📋 結果のレポートについて
         </h2>
+
+        {/* メタクリさんの画像 */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '24px'
+        }}>
+          <img
+            src="/metakuri.png"
+            alt="メタクリ"
+            style={{
+              width: '200px',
+              height: 'auto',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+            }}
+          />
+        </div>
+
+        <p style={{
+          fontSize: '16px',
+          color: '#4b5563',
+          lineHeight: '1.8',
+          marginBottom: '16px'
+        }}>
+          レポートでは私<strong>「メタクリ」</strong>があなたの<strong>経験の振り返り</strong>と<strong>診断結果</strong>を読み解き、
+          あなたらしい創造性の特徴や、今後の活かし方についてお届けします。
+        </p>
         <p style={{
           fontSize: '16px',
           color: '#4b5563',
           lineHeight: '1.8'
         }}>
-          あなたは内発的な動機が強く、情熱と好奇心を大切にするタイプです。アイデアを広げることを楽しみ、柔軟に方向転換しながら進めることが得意です。
-          一方で、具体的な実践を通じて学び、チームでの共創を大切にする傾向があります。
-          <br /><br />
-          この多様なバランスは、状況に応じて創造性を発揮できる強みです。
-          必要に応じて、AIツールで不足する視点を補完することで、さらに効果的な創造活動が可能になります。
+          数日以内に<strong>レポートをお送りします</strong>ので、楽しみにお待ちください。
         </p>
-        <div style={{
-          marginTop: '20px',
-          padding: '15px',
-          backgroundColor: '#f3f4f6',
-          borderRadius: '10px',
-          fontSize: '14px',
-          color: '#6b7280',
-          fontStyle: 'italic'
-        }}>
-          ※ 現在はプレースホルダーの解釈文です。今後Gemini APIで個別生成予定。
-        </div>
       </div>
 
       {/* アクションボタン */}
@@ -248,8 +292,11 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
         padding: '0 20px',
         boxSizing: 'border-box'
       }}>
-        <button
-          onClick={onRestart}
+        {/* メタクリラジオへのリンク */}
+        <a
+          href="https://metacreativeradio.github.io/"
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
             padding: '16px 32px',
             fontSize: '18px',
@@ -259,78 +306,24 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
             border: 'none',
             borderRadius: '16px',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+            textDecoration: 'none',
+            textAlign: 'center',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f9fafb';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'white';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
           }}
         >
-          もう一度診断する
-        </button>
-
-        {/* デバッグボタン */}
-        <div style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.3)',
-          paddingTop: '15px'
-        }}>
-          <div style={{
-            fontSize: '12px',
-            color: 'rgba(255, 255, 255, 0.7)',
-            marginBottom: '8px',
-            textAlign: 'center'
-          }}>
-            デバッグ（AI解説文生成用）
-          </div>
-          <button
-            onClick={handleShowDebugText}
-            style={{
-              width: '100%',
-              padding: '12px 24px',
-              fontSize: '14px',
-              fontWeight: '600',
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            📋 診断データを表示
-          </button>
-
-          {/* テキストボックス */}
-          {showDebugText && (
-            <div style={{
-              marginTop: '15px'
-            }}>
-              <textarea
-                value={debugText}
-                readOnly
-                style={{
-                  width: '100%',
-                  height: '300px',
-                  padding: '15px',
-                  fontSize: '13px',
-                  fontFamily: 'monospace',
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  color: '#1f2937',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '12px',
-                  resize: 'vertical',
-                  boxSizing: 'border-box',
-                  lineHeight: '1.6'
-                }}
-                onClick={(e) => e.target.select()}
-              />
-              <div style={{
-                fontSize: '11px',
-                color: 'rgba(255, 255, 255, 0.6)',
-                marginTop: '8px',
-                textAlign: 'center'
-              }}>
-                ↑ テキストボックスをクリックして全選択し、コピーしてください
-              </div>
-            </div>
-          )}
-        </div>
+          🎙️ 創造性についてメタに考える「メタクリラジオ」
+        </a>
       </div>
     </div>
   );

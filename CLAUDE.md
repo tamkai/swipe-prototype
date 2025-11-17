@@ -3,10 +3,77 @@
 ## プロジェクト概要
 YES/NOスワイプUIプロトタイプ（3パターン完成）
 
-- **プロジェクト名**: Swipe Prototype
+- **プロジェクト名**: Swipe Prototype（メタクリ創造性診断）
 - **技術スタック**: React + Vite + Framer Motion
 - **目標**: シンプルなYES/NO判定UIと回答体験向上の検証
 - **用途**: 選好調査・アンケート・UI/UXテスト
+
+---
+
+## 🚀 開発プロセスルール（重要）
+
+### Claude Code サブエージェント活用のベストプラクティス
+
+このプロジェクトでは、**効率的な分散並列開発**を実現するため、以下のルールに従って開発を進めます。
+
+#### 1. タスクの並列実行
+
+- 独立したタスクは**必ず並列で実行**すること
+- 複数のサブエージェント（Task tool）を同時に起動
+- 単一メッセージ内で複数の`Task`ツール呼び出しを行う
+
+**例**:
+```
+タスク: デザイントークン作成 + Buttonコンポーネント実装 + アクセシビリティ改善
+→ 3つのTaskを同時起動（1メッセージで3つのTask tool呼び出し）
+```
+
+#### 2. フェーズ管理とDOD（Definition of Done）
+
+各開発フェーズは以下のDODを満たして完了とする：
+
+**Phase完了の条件**:
+- ✅ 実装完了（コード作成・テスト）
+- ✅ コードレビュー実施（サブエージェントによる自動レビュー）
+- ✅ プロダクションビルド成功（`npm run build`）
+- ✅ 動作確認（開発サーバーまたはプレビュー）
+- ✅ Git commit + push（Netlify自動デプロイ）
+- ✅ CLAUDE.md更新（変更内容の記録）
+
+#### 3. サブエージェントの戦略的活用
+
+**利用可能なエージェント**:
+- `general-purpose`: 複雑なタスク、検索、多段階処理
+- `Explore`: コードベース探索、ファイル検索、パターン分析
+  - thoroughness: `quick` / `medium` / `very thorough`
+- `Plan`: タスク計画、アーキテクチャ設計
+
+**推奨する使い方**:
+- 独立した複数タスク → 並列実行（1メッセージで複数Task呼び出し）
+- コードベース探索が必要 → `Explore`エージェント活用
+- 大規模なリファクタリング → `Plan`エージェントで計画立案後に実行
+
+#### 4. コードレビュープロセス
+
+各フェーズ完了時に以下を実施：
+1. **自動テスト実行**: `npm test`
+2. **ビルド確認**: `npm run build`
+3. **コードレビュー**: サブエージェントによるレビュー
+   - アクセシビリティチェック
+   - パフォーマンス確認
+   - セキュリティ検証
+4. **Git commit**: 変更をコミット
+5. **Netlify自動デプロイ**: 本番環境への反映確認
+
+#### 5. ドキュメント更新
+
+フェーズ完了時に必ずCLAUDE.mdを更新：
+- 実装内容の詳細
+- 技術的な判断理由
+- 検証済み機能リスト
+- 次回実装予定
+
+---
 
 ## 現在の実装状況
 
@@ -2035,15 +2102,548 @@ c4269a5 - Enhance admin dashboard and improve UX flow (2025-11-05)
 
 ---
 
-**更新日**: 2025-11-05
-**最終更新**: 管理画面認証とNetlifyデプロイ完了
+## 🐛 重複データ保存バグ修正（2025-11-10）
+
+### 問題の発見
+知人に診断を使用してもらったところ、**1回の診断で2件のデータがSupabaseに登録される**問題が発生。
+
+### 原因の特定
+1. **React Strict Mode**（開発環境）によるダブルレンダリング
+   - `main.jsx`で`<StrictMode>`が有効
+   - コンポーネントが2回レンダリングされ、副作用も2回実行される
+
+2. **重複保存を防ぐ仕組みの欠如**
+   - `handleType2Complete`が複数回呼ばれる可能性
+   - 保存中または保存済みのチェックがなかった
+
+3. **最後の軸の値が保存されない可能性**
+   - Type2DiagnosisFlowで`onComplete(results)`を呼ぶ際、最後の軸の値が`results`に反映される前に実行されていた
+   - `setResults`は非同期なため、タイミング問題が発生
+
+### 修正内容
+
+#### 1. IntegratedDiagnosisFlow.jsx（83-114行目）
+```javascript
+// handleType2CompleteをuseCallbackでメモ化 + 重複防止
+const handleType2Complete = useCallback(async (results) => {
+  // 既に保存中または保存済みの場合はスキップ
+  if (isSaving || type2Results) {
+    console.log('重複保存をスキップ');
+    return;
+  }
+
+  setType2Results(results);
+  setIsSaving(true);
+
+  // データをSupabaseに保存
+  if (sessionId) {
+    try {
+      await saveAfflatusResponse(sessionId, {
+        basicInfo,
+        type1Results,
+        type2Results: results,
+        swipeHistory,
+        sliderHistory: results
+      });
+      console.log('診断結果保存成功');
+    } catch (error) {
+      console.error('診断結果保存失敗:', error);
+    }
+  } else {
+    console.warn('セッションIDがないため、データ保存をスキップしました');
+  }
+
+  setIsSaving(false);
+  setPhase('results');
+}, [isSaving, type2Results, sessionId, basicInfo, type1Results, swipeHistory]);
+```
+
+**ポイント**:
+- `useCallback`でメモ化して安定した参照を保持
+- `isSaving`または`type2Results`が既に存在する場合は早期リターン
+- コンソールログで重複保存の検知を追加
+
+#### 2. Type2DiagnosisFlow.jsx（25-52行目）
+```javascript
+const handleNext = () => {
+  if (isLastStep) {
+    // 最後のステップ：現在の値を含めた最終結果を返す
+    const finalResults = {
+      ...results,
+      [currentDimension.id]: currentValue
+    };
+    onComplete(finalResults);
+  } else {
+    // 次のステップへ
+    const nextStep = currentStep + 1;
+    const nextDimension = dimensionsData[nextStep];
+
+    // 次の軸のスライダー値を中央（0.5）にリセット
+    setResults(prev => ({
+      ...prev,
+      [nextDimension.id]: 0.5
+    }));
+
+    setCurrentStep(nextStep);
+    setHasInteracted(false);
+
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 0);
+  }
+};
+```
+
+**ポイント**:
+- 最後のステップで`currentValue`を明示的に`finalResults`に含める
+- これにより、`setResults`の非同期性に依存せず、確実に最後の軸の値を保存
+
+### Supabaseの重複レコード削除について
+- **安全に削除可能**: 重複したレコードの片方（通常は後に作成された方）を削除してOK
+- **確認事項**: `created_at`で作成日時を確認し、わずかな時間差で作成されているはず
+- **関連テーブル**: `life_reflections`, `personal_values`, `personal_purposes`も重複している可能性
+- **推奨手順**:
+  1. 両方のレコードの`id`と`created_at`を確認
+  2. 後に作成された方の`id`をメモ
+  3. SupabaseダッシュボードまたはSQL（`DELETE FROM afflatus_responses WHERE id = ?`）で削除
+  4. 外部キー制約（`ON DELETE CASCADE`）で関連レコードも自動削除
+
+### Git履歴
+```bash
+5c74dea - Fix duplicate data save issue in diagnosis flow (2025-11-10)
+```
+
+### 検証済み機能
+✅ 重複保存防止ロジック実装（`isSaving`と`type2Results`チェック）
+✅ 最後の軸の値が確実に保存される修正
+✅ useCallbackによるメモ化
+✅ コンソールログでの重複検知
+✅ GitHubへのプッシュ完了
+✅ Netlify自動デプロイ開始
+
+### 動作確認方法
+1. Netlifyデプロイ完了後、実際に診断を実行
+2. Supabaseで1件のみデータが登録されることを確認
+3. ブラウザコンソールで「重複保存をスキップ」ログが出ないことを確認（正常時）
+4. もし重複が検知された場合はログに表示される
+
+---
+
+## 🎨 Atlassian Design System導入検討（2025-11-10）
+
+### 背景
+デザインシステムとしてAtlassian Design System（https://atlassian.design/components）の採用を検討。システムの原則を深く理解し、現在のアプリとの比較分析を実施。
+
+### Atlassian Design Systemの主要原則（記憶完了）
+
+#### 1. コア原則
+- **再利用性**: コンポーネントは特定の操作ニーズを満たす再利用可能なビルディングブロック
+- **アクセシビリティ優先**: 全ての能力を持つ人々が利用できる設計（コンプライアンスだけでなく公平性と包摂性を重視）
+- **一貫性**: デバイス・プラットフォーム間で統一された操作パターン
+- **セマンティックHTML**: 意味のある要素（`<button>`, `<nav>`, `<section>`）を使用
+
+#### 2. アクセシビリティ要件
+- **色のコントラスト**: 通常テキスト4.5:1、大きいテキスト3:1
+- **キーボードナビゲーション**: 全機能がキーボードで操作可能
+- **フォーカス管理**: 明確なフォーカスリング（`outline-width: 2px`）
+- **テキスト代替**: スクリーンリーダー対応
+- **ユーザーコントロール**: ダークモード、コントラスト増強、reduced motion対応
+
+#### 3. ボタンコンポーネントのベストプラクティス
+- 状態管理: hover, active, disabled, focusの明確な視覚表現
+- `cursor: not-allowed` でdisabled状態を表現
+- `aria-expanded` で展開状態を管理
+- 複数のカラーバリエーション（primary, warning, danger等）
+
+### 現在のアプリの分析結果
+
+#### ✅ 既に良い点
+1. **フォーカス管理**: 入力フィールドに`:focus`スタイルあり（青いボーダー）、`autoFocus`属性を適切に使用
+2. **視覚的フィードバック**: ボタンにhover効果実装、スライダーのドラッグ状態を視覚化（`scale(1.1)`）
+3. **レスポンシブデザイン**: `clamp()`を使ったフォントサイズ調整、モバイル最適化
+4. **カラーシステム**: 一貫したカラーパレット（Tailwind風）、コントラスト比は概ね良好
+
+#### ⚠️ 改善が必要な点
+
+##### 🔴 高優先度（即座に対応すべき）
+
+1. **フォーカスリングの不一致**
+   - 現在: `outline: 'none'`で削除している箇所がある
+   - 推奨: カスタムフォーカスリングを追加
+   ```javascript
+   ':focus-visible': {
+     outline: '2px solid #3b82f6',
+     outlineOffset: '2px'
+   }
+   ```
+   - 影響: キーボードユーザーがフォーカス位置を見失う、WCAG 2.1のフォーカス可視性要件（2.4.7）に抵触
+   - 該当箇所: BasicInfoInput.jsx（107-126行目）、AdminDashboard.jsx（625-640行目）
+
+2. **ARIA属性の不足**
+   - 推奨: ボタンの状態を明示
+   ```javascript
+   <button
+     disabled={!hasMovedSlider}
+     aria-disabled={!hasMovedSlider}
+     aria-label="診断を開始する"
+   >
+     診断開始 →
+   </button>
+   ```
+   - 該当箇所: IntegratedDiagnosisFlow.jsx（252-267行目）、Type2DiagnosisFlow.jsx（267-286行目）
+
+3. **ラベルとフォームの関連付け**
+   - 現在: `<label>`に`for`属性なし
+   - 推奨: `id/htmlFor`で関連付け
+   ```javascript
+   <label htmlFor="name-input">お名前</label>
+   <input id="name-input" type="text" value={name} />
+   ```
+   - 該当箇所: BasicInfoInput.jsx（98-154行目）、AdminDashboard.jsx（616-640行目）
+
+##### 🟡 中優先度（段階的に対応）
+
+4. **デザイントークンシステムの構築**
+   - 現在: ハードコードされたカラー値（`#3b82f6`, `#374151`など）
+   - 推奨: デザイントークンを一元管理
+   ```javascript
+   // /src/design-tokens.js
+   export const colors = {
+     primary: { 500: '#3b82f6', 700: '#1d4ed8' },
+     gray: { 200: '#e5e7eb', 700: '#374151' },
+   };
+   ```
+   - 影響: ダークモード対応が困難、一括カラー変更ができない
+
+5. **共通UIコンポーネントの作成**
+   - ボタンコンポーネント: `Button.jsx`（プライマリ、セカンダリ、危険、無効化状態）
+   - テキストフィールド: `TextField.jsx`（エラー状態、ヘルパーテキスト、必須マーク）
+   - フォームラベル: `FormLabel.jsx`（一貫したラベルスタイル）
+   - 現在: 各所でボタンスタイルが重複
+
+6. **エラーハンドリングの強化**
+   - 現在: バリデーションエラーの視覚表現なし
+   - 推奨: エラー状態を追加
+   ```javascript
+   <input
+     aria-invalid={!!errors.name}
+     aria-describedby={errors.name ? 'name-error' : undefined}
+     style={{ borderColor: errors.name ? '#ef4444' : '#e5e7eb' }}
+   />
+   {errors.name && (
+     <span id="name-error" role="alert" style={{ color: '#ef4444' }}>
+       {errors.name}
+     </span>
+   )}
+   ```
+
+##### 🟢 低優先度（将来的に対応）
+
+7. **ダークモード対応**: デザイントークンでカラーテーマ切り替え、`prefers-color-scheme`対応
+8. **Reduced Motion対応**: `prefers-reduced-motion: reduce`でアニメーション無効化
+9. **キーボードショートカット**: 主要操作にショートカット追加（例: Enterで次へ）
+
+### 具体的な実装例
+
+#### デザイントークンの作成
+```javascript
+// /src/design-tokens.js
+export const colors = {
+  primary: {
+    50: '#eff6ff',
+    500: '#3b82f6',
+    700: '#1d4ed8',
+  },
+  gray: {
+    200: '#e5e7eb',
+    700: '#374151',
+    900: '#1f2937',
+  },
+  danger: {
+    500: '#ef4444',
+  }
+};
+
+export const spacing = {
+  xs: '4px',
+  sm: '8px',
+  md: '16px',
+  lg: '24px',
+  xl: '40px',
+};
+
+export const typography = {
+  fontFamily: {
+    base: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+  fontSize: {
+    sm: '14px',
+    base: '16px',
+    lg: '18px',
+    xl: '24px',
+  },
+  fontWeight: {
+    normal: '400',
+    semibold: '600',
+    bold: '700',
+  },
+};
+```
+
+#### Buttonコンポーネントの作成
+```javascript
+// /src/components/common/Button.jsx
+import { colors, spacing, typography } from '@/design-tokens';
+
+const Button = ({
+  variant = 'primary',
+  size = 'medium',
+  disabled = false,
+  children,
+  ...props
+}) => {
+  const baseStyles = {
+    fontFamily: typography.fontFamily.base,
+    fontWeight: typography.fontWeight.bold,
+    border: 'none',
+    borderRadius: '12px',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 0.2s ease',
+    opacity: disabled ? 0.5 : 1,
+  };
+
+  const variantStyles = {
+    primary: {
+      backgroundColor: disabled ? colors.gray[200] : colors.primary[500],
+      color: 'white',
+    },
+    secondary: {
+      backgroundColor: 'white',
+      color: colors.gray[700],
+      border: `2px solid ${colors.gray[200]}`,
+    },
+  };
+
+  const sizeStyles = {
+    small: {
+      padding: `${spacing.sm} ${spacing.md}`,
+      fontSize: typography.fontSize.sm,
+    },
+    medium: {
+      padding: `${spacing.md} ${spacing.lg}`,
+      fontSize: typography.fontSize.base,
+    },
+  };
+
+  return (
+    <button
+      disabled={disabled}
+      aria-disabled={disabled}
+      style={{
+        ...baseStyles,
+        ...variantStyles[variant],
+        ...sizeStyles[size],
+      }}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+export default Button;
+```
+
+#### フォーカスリングの全体適用
+```css
+/* /src/index.css に追加 */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+```
+
+### Chrome DevTools MCP利用可能
+- **接続状態**: ✓ Connected（正常動作中）
+- **コマンド**: `npx chrome-devtools-mcp@latest`
+- **用途**: アクセシビリティ検証、コントラスト比測定、キーボードナビゲーションテスト、スクリーンショット確認
+
+### 推奨する改善順序
+1. **フォーカスリング + ARIA属性**（即座）
+2. **デザイントークン作成**（1-2日）
+3. **共通UIコンポーネント作成**（1週間）
+4. **ダークモード対応**（将来）
+
+### 次回実装予定
+- Atlassian Design Systemの原則に基づいたコンポーネントリファクタリング
+- アクセシビリティ改善（フォーカスリング、ARIA属性、セマンティックHTML）
+- デザイントークンシステムの構築
+- 共通UIコンポーネントライブラリの作成
+
+---
+
+**更新日**: 2025-11-10
+**最終更新**: 重複データ保存バグ修正 + Atlassian Design System導入検討
 **セッション内容**:
-- 管理画面パスワード認証実装（password: afflatus2025）
-- トップページに管理画面リンク追加
-- ページタイトル変更（AFFLATUS創造性診断）
-- RichTextEditorボタンラベル改善（書式削除）
-- Netlify環境変数設定とデプロイ
-- SPAルーティング対応（_redirects）
-- 公開サイトでの動作確認完了
-**次回セッション**: 管理画面の機能拡張、またはユーザーフィードバックに基づく改善
+- 1回の診断で2件データが登録される問題の原因特定と修正
+- React Strict Modeによる重複保存を防ぐロジック実装
+- Type2診断で最後の軸の値が確実に保存される修正
+- Atlassian Design Systemの主要原則の理解と記憶
+- 現在のアプリのアクセシビリティ分析と改善点の洗い出し
+- デザイントークンシステムと共通UIコンポーネントの設計案作成
+- Chrome DevTools MCPの利用確認
+**次回セッション**: Atlassian Design Systemに基づくアクセシビリティ改善、またはデザイントークンシステムの実装
+**作成者**: tamkai + Claude Code
+
+## 🎨 結果画面リデザインとUI最適化（2025-11-17）
+
+### 実装内容 ✅
+
+#### 1. 結果画面のリデザイン
+**ファイル**: [CreativeCompassResults.jsx](src/components/production/CreativeCompassResults.jsx)
+
+**変更内容**:
+- タイトル変更: "Creative Compass" → "あなたの創造性バランス / Your Creativity Balance"
+- 8軸スライダー前に説明セクション追加:
+  ```
+  以下が、あなたの創造性のバランスを8つの軸で可視化したものです。
+
+  メタクリ創造性診断は「創造性の多様性」と「個人の独自性」を可視化します。
+
+  数値の大小に優劣はありません。この結果は「直感判断」と「自己認識」の一致やズレから、
+  あなたの創造性を紐解いていくためのものです。
+  その意味で、これはあなたらしい創造性の「かたち」です。
+  ```
+
+- レポート通知セクション追加（メタクリさん画像付き）:
+  ```
+  レポートでは私「メタクリ」があなたの経験の振り返りと診断結果を読み解き、
+  創造性の傾向やギャップの意味を深く掘り下げます。
+
+  数日以内にレポートをお送りしますので、楽しみにお待ちください。
+  ```
+
+- 「もう一度診断する」ボタンを削除
+- 「メタクリラジオ」へのリンクを追加:
+  - テキスト: "🎙️ 創造性についてメタに考える「メタクリラジオ」"
+  - URL: https://metacreativeradio.github.io/
+  - ホバー効果（浮き上がり、影の強調）
+
+- デバッグセクション完全削除（管理画面に移行済み）
+
+#### 2. Type1診断インストラクション画面のレイアウト修正
+**ファイル**: [KeywordSwipeStack.jsx](src/components/production/KeywordSwipeStack.jsx:60-68)
+
+**問題**: ボタンの下にマージンが表示されず、画面下部にぴったりくっついていた
+
+**原因**: `minHeight: '100vh'` + `justifyContent: 'flex-start'` の組み合わせにより、コンテンツが短くても画面いっぱいに伸ばされ、`paddingBottom` が見えない位置に配置されていた
+
+**解決策**:
+```javascript
+// 修正前
+<div style={{
+  width: '100%',
+  minHeight: '100vh',  // ← 削除
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'flex-start',  // ← 削除
+  padding: '20px',
+  paddingBottom: '120px',
+  overflowY: 'auto'  // ← 削除
+}}>
+
+// 修正後
+<div style={{
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  padding: '20px',
+  paddingBottom: '60px',  // 120px → 60px に調整
+  position: 'relative',
+  boxSizing: 'border-box'
+}}>
+```
+
+**効果**: コンテンツが自然な高さになり、ボタン下に適切な余白が表示されるようになった
+
+#### 3. スマホでのボタン折り返し問題の修正
+**ファイル**: [KeywordSwipeCard.jsx](src/components/production/KeywordSwipeCard.jsx:189-210)
+
+**問題**: iPhone 12 Proなどの小さい画面で「あてはまらない」ボタンのテキストが2行に折り返される
+
+**解決策**:
+```javascript
+// フォントサイズをレスポンシブに変更
+fontSize: 'clamp(16px, 5vw, 20px)',  // 20px固定 → clamp()
+padding: '16px 20px',  // 24px → 20px に削減
+```
+
+**効果**: 小さい画面では自動的に16pxまでフォントサイズが縮小され、折り返しが発生しなくなった
+
+#### 4. カード位置の調整
+**ファイル**: [App.css](src/App.css:81,102)
+
+**変更内容**:
+```css
+/* デスクトップ */
+.card-container {
+  transform: translateY(-60px);  /* -120px → -60px */
+}
+
+/* モバイル */
+@media (max-width: 768px) {
+  .card-container {
+    transform: translateY(-50px);  /* -100px → -50px */
+  }
+}
+```
+
+**効果**: ヘッダーメニューがビューポート外に飛び出さなくなった
+
+### 技術的な学び
+
+1. **flexboxレイアウトの制約**: `minHeight: '100vh'` はスクロール可能なコンテンツには不適切。自然な高さにして `paddingBottom` で余白を確保するのが正解
+
+2. **レスポンシブフォント**: `clamp(min, preferred, max)` を使うことで、画面サイズに応じて自動調整できる
+
+3. **リンクのホバー効果**: `onMouseEnter`/`onMouseLeave` でインライン実装することで、CSSファイルなしでインタラクティブな効果を追加できる
+
+### 検証済み機能
+✅ Type1診断インストラクション画面のボタン下マージン表示
+✅ スマホでのボタンテキスト折り返し防止
+✅ 結果画面の新しいデザイン（説明セクション + レポート通知 + メタクリラジオリンク）
+✅ デバッグセクション削除
+✅ カード位置の最適化
+
+### Git履歴
+```bash
+# コミット予定
+- Fix instruction screen button margin issue
+- Add responsive font sizing for mobile buttons
+- Redesign results screen with new sections
+- Add MetaCreativity Radio link
+- Remove debug section from results
+```
+
+---
+
+**更新日**: 2025-11-17
+**最終更新**: 結果画面リデザインとUI最適化完了
+**セッション内容**:
+- 結果画面の大幅リデザイン（タイトル変更、説明セクション追加、メタクリさん紹介）
+- Type1診断インストラクション画面のレイアウト問題を根本解決（minHeight削除）
+- スマホでのボタン折り返し問題を修正（レスポンシブフォント）
+- 「もう一度診断する」をメタクリラジオリンクに変更
+- デバッグセクション削除
+- カード位置の最適化
+**次回セッション**: Netlifyへのデプロイ、または追加のUI改善
 **作成者**: tamkai + Claude Code

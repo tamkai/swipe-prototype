@@ -78,7 +78,7 @@ body.swipe-active {
   max-width: 400px;
   height: 380px;
   margin: 0 auto;
-  transform: translateY(-120px);
+  transform: translateY(-60px);
 }
 
 /* モバイル最適化 */
@@ -99,7 +99,7 @@ body.swipe-active {
   .card-container {
     width: 95vw;
     height: 340px;
-    transform: translateY(-100px);
+    transform: translateY(-50px);
   }
 }
 

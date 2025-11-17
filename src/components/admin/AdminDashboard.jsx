@@ -419,7 +419,7 @@ const AdminDashboard = () => {
 
   // MD形式のデータ生成（完全版 or 創造性のみ）
   const generateDebugText = (participant, includeLifeReflection = true) => {
-    let text = '# AFFLATUS創造性診断 結果データ\n\n';
+    let text = '# メタクリ創造性診断 結果データ\n\n';
 
     // 基本情報
     text += `## 基本情報\n`;

@@ -3,6 +3,7 @@ import { useState } from 'react';
 const BasicInfoInput = ({ onComplete, onDebugMenu }) => {
   const [name, setName] = useState('');
   const [title, setTitle] = useState('');
+  const [showDetails, setShowDetails] = useState(false);
 
   const handleSubmit = () => {
     if (!name.trim()) {
@@ -65,12 +66,144 @@ const BasicInfoInput = ({ onComplete, onDebugMenu }) => {
           color: 'white',
           fontSize: 'clamp(28px, 8vw, 36px)',
           fontWeight: '800',
-          marginBottom: '16px',
+          marginBottom: '8px',
           textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
           whiteSpace: 'nowrap'
         }}>
-          AFFLATUS創造性診断
+          メタクリ創造性診断
         </h1>
+        <p style={{
+          color: 'rgba(255, 255, 255, 0.85)',
+          fontSize: 'clamp(14px, 4vw, 18px)',
+          fontWeight: '600',
+          marginBottom: '16px',
+          textShadow: '0 1px 5px rgba(0, 0, 0, 0.2)',
+          letterSpacing: '0.5px'
+        }}>
+          MetaCreativity Assessment
+        </p>
+      </div>
+
+      {/* 診断の説明セクション（折りたたみ可能） */}
+      <div style={{
+        width: '100%',
+        maxWidth: '800px',
+        marginBottom: '20px'
+      }}>
+        <div style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '20px',
+          textAlign: 'center',
+          border: '1px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          <p style={{
+            color: 'white',
+            fontSize: '16px',
+            marginBottom: '8px',
+            fontWeight: '600'
+          }}>
+            💡 あなたの創造性を8つの軸で可視化します
+          </p>
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.85)',
+            fontSize: '14px',
+            marginBottom: '12px'
+          }}>
+            所要時間：約15分（経験の振り返り 9分 + 直感診断 3分 + 自己評価 3分）
+          </p>
+
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '13px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              fontWeight: '600'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            }}
+          >
+            {showDetails ? '▲ 詳細を閉じる' : '▼ 診断について詳しく見る'}
+          </button>
+
+          {showDetails && (
+            <div style={{
+              marginTop: '20px',
+              textAlign: 'left',
+              fontSize: '14px',
+              color: 'white',
+              lineHeight: '1.8',
+              backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              borderRadius: '12px',
+              padding: '20px'
+            }}>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: '700',
+                marginBottom: '12px',
+                color: 'white'
+              }}>
+                📊 診断の目的
+              </h3>
+              <p style={{ marginBottom: '16px', color: 'rgba(255, 255, 255, 0.95)' }}>
+                誰もが持つ創造性の自己理解を促進するための診断ツールです。<br/>
+                従来の創造性診断が「創造性の有無」や「創造性の高低」を測定するのに対し、メタクリ創造性診断は<strong>「創造性の多様性」と「個人の独自性」</strong>を可視化します。
+              </p>
+
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: '700',
+                marginBottom: '12px',
+                color: 'white'
+              }}>
+                🎯 8つの創造性の軸
+              </h3>
+              <div style={{
+                marginBottom: '16px',
+                color: 'rgba(255, 255, 255, 0.95)',
+                lineHeight: '1.8'
+              }}>
+                • 動機（内発 ↔ 目的整合）<br/>
+                • 生成（発散 ↔ 収束）<br/>
+                • 進行（柔軟 ↔ 粘り）<br/>
+                • 価値創出（改善 ↔ 発明）<br/>
+                • 表現（自己表現 ↔ 共感価値）<br/>
+                • 思考（抽象 ↔ 具体）<br/>
+                • 実行（即興 ↔ 設計）<br/>
+                • 協働（単独集中 ↔ 協働駆動）
+              </div>
+
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: '700',
+                marginBottom: '12px',
+                color: 'white'
+              }}>
+                📝 診断の流れ
+              </h3>
+              <ol style={{
+                paddingLeft: '20px',
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                <li>これまでの経験の振り返り（9分）</li>
+                <li>直感的なキーワード選択（3分）</li>
+                <li>自己評価による8軸診断（3分）</li>
+              </ol>
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{
