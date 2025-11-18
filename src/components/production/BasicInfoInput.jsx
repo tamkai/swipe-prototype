@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const BasicInfoInput = ({ onComplete, onDebugMenu }) => {
+const BasicInfoInput = ({ onComplete }) => {
   const [name, setName] = useState('');
   const [title, setTitle] = useState('');
   const [showDetails, setShowDetails] = useState(false);
@@ -327,66 +327,29 @@ const BasicInfoInput = ({ onComplete, onDebugMenu }) => {
         >
           次へ →
         </button>
-      </div>
 
-      {/* デバッグリンク・管理画面リンク（コンテンツエリア外） */}
-      <div style={{
-        marginTop: '30px',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        alignItems: 'center'
-      }}>
-        <a
-          href="/admin"
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#9ca3af',
-            fontSize: '11px',
-            fontWeight: '400',
-            cursor: 'pointer',
-            textDecoration: 'none',
-            padding: '4px',
-            opacity: 0.4,
-            transition: 'opacity 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.opacity = '0.7';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.opacity = '0.4';
-          }}
-        >
-          管理画面（PC専用）
-        </a>
-        {onDebugMenu && (
-          <button
-            onClick={onDebugMenu}
+        {/* 管理画面リンク */}
+        <div style={{
+          marginTop: '30px',
+          textAlign: 'center'
+        }}>
+          <a
+            href="/admin"
             style={{
-              background: 'none',
-              border: 'none',
+              fontSize: '12px',
               color: '#9ca3af',
-              fontSize: '11px',
-              fontWeight: '400',
-              cursor: 'pointer',
               textDecoration: 'none',
-              padding: '4px',
-              opacity: 0.4,
+              opacity: 0.7,
               transition: 'opacity 0.2s'
             }}
-            onMouseEnter={(e) => {
-              e.target.style.opacity = '0.7';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.opacity = '0.4';
-            }}
+            onMouseEnter={(e) => e.target.style.opacity = '1'}
+            onMouseLeave={(e) => e.target.style.opacity = '0.7'}
           >
-            デバッグページ
-          </button>
-        )}
+            管理画面（PC専用）
+          </a>
+        </div>
       </div>
+
     </div>
   );
 };

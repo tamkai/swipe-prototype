@@ -29,14 +29,20 @@ import './App.css';
 function App() {
   // ルーティング（簡易版）
   const [currentRoute, setCurrentRoute] = useState(window.location.pathname);
+  const [hashRoute, setHashRoute] = useState(window.location.hash);
 
   useEffect(() => {
     const handleLocationChange = () => {
       setCurrentRoute(window.location.pathname);
+      setHashRoute(window.location.hash);
     };
 
     window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
   }, []);
 
   // 管理画面へのルーティング
@@ -144,12 +150,31 @@ function App() {
     setIsComplete(true);
   };
 
+  // ハッシュルーティングに基づいて初期フェーズを決定
+  const getInitialPhaseFromHash = () => {
+    switch (hashRoute) {
+      case '#lifeReflection':
+        return 'lifeReflection';
+      case '#type1':
+        return 'type1';
+      case '#type2':
+        return 'type2';
+      case '#results':
+        return 'results';
+      default:
+        return null;
+    }
+  };
+
+  const initialPhase = getInitialPhaseFromHash();
+
   return (
     <div className={`app ${!selectedPattern ? 'select-mode' : selectedPattern === 'sliderTest' || selectedPattern === 'resultsTest' || selectedPattern === 'type2Diagnosis' || selectedPattern === 'integratedDiagnosis' || selectedPattern === 'debugMenu' ? 'select-mode' : isComplete && selectedPattern === 'keywordSwipe' ? 'results-mode' : 'swipe-mode'}`}>
       {!selectedPattern ? (
         // 統合診断フロー（デフォルトのトップページ）
         <IntegratedDiagnosisFlow
           onBack={() => setSelectedPattern('debugMenu')}
+          initialPhase={initialPhase}
         />
       ) : selectedPattern === 'debugMenu' ? (
         // デバッグメニュー（旧パターン選択画面）

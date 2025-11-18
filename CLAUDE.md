@@ -2647,3 +2647,90 @@ padding: '16px 20px',  // 24px → 20px に削減
 - カード位置の最適化
 **次回セッション**: Netlifyへのデプロイ、または追加のUI改善
 **作成者**: tamkai + Claude Code
+
+## 🎙️ メタクリラジオセクション追加（2025-11-18）
+
+### 実装内容 ✅
+
+#### 1. メタクリラジオ紹介セクションの追加
+**ファイル**: [CreativeCompassResults.jsx](src/components/production/CreativeCompassResults.jsx)
+
+**変更内容**:
+- 吹き出しデザインの説明ボックスを追加
+  - 右上に逆三角形（メタクリさんからの吹き出し風）
+  - 説明文：「レポートを待っている間に、メタクリ創造性診断を開発したタムカイとOpiが、創造性についてあれこれ考えて語り合うポッドキャスト番組があります！毎週月曜日更新、大里Pの編集後記もおもしろいよ！」
+  
+- メタクリラジオへのリンクボタン
+  - テキスト：「🎙️ メタクリラジオを聴いてみる」
+  - カラー：落ち着いたアンバー/イエロー系（#f59e0b）
+  - ホバー時：濃いアンバー（#d97706）
+  - URL：https://metacreativeradio.github.io/
+
+**吹き出しの実装**:
+```javascript
+{/* 吹き出しの三角形（右上） */}
+<div style={{
+  position: 'absolute',
+  top: '-10px',
+  right: '40px',
+  width: 0,
+  height: 0,
+  borderLeft: '12px solid transparent',
+  borderRight: '12px solid transparent',
+  borderBottom: '12px solid rgba(255, 255, 255, 0.95)'
+}} />
+```
+
+**ボタンスタイル**:
+```javascript
+style={{
+  padding: '16px 32px',
+  fontSize: '18px',
+  fontWeight: '700',
+  backgroundColor: '#f59e0b',
+  color: 'white',
+  border: 'none',
+  borderRadius: '16px',
+  cursor: 'pointer',
+  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+  // ...
+}}
+```
+
+### Git履歴
+```bash
+e7090a2 - Add MetaCreativity Radio section with speech bubble design (2025-11-18)
+201c1a0 - Redesign results screen and fix UI issues (2025-11-17)
+```
+
+### 検証済み機能
+✅ 吹き出しデザインの説明ボックス（右上に三角形）
+✅ メタクリラジオへのリンクボタン（アンバー/イエロー系）
+✅ ホバー効果（浮き上がり、色変化）
+✅ GitHubへのプッシュ完了
+✅ Netlify自動デプロイ
+
+### 現在の状況（2025-11-18）
+
+#### 報告された問題
+ユーザーテストで以下の問題が発見された：
+1. **意図しない操作エラー**
+2. **デバッグモードへのリンクが押される現象**
+
+これらの問題を一つずつ解決する必要がある。
+
+#### 開発サーバー
+- 起動中：http://172.20.10.2:5173/
+- 問題の詳細確認待ち
+
+---
+
+**更新日**: 2025-11-18
+**最終更新**: メタクリラジオセクション追加完了、ユーザーテスト問題の調査開始
+**セッション内容**:
+- メタクリラジオ紹介セクション追加（吹き出しデザイン）
+- リンクボタンのカラー変更（アンバー/イエロー系）
+- GitHubプッシュ＆Netlifyデプロイ
+- ユーザーテストで発見された問題の調査開始
+**次回セッション**: 操作エラーとデバッグモードリンク問題の解決
+**作成者**: tamkai + Claude Code

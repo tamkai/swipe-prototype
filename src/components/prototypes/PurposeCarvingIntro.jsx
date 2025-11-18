@@ -1,6 +1,6 @@
 import React from 'react';
 
-const PurposeCarvingIntro = ({ onStart, onSkip }) => {
+const PurposeCarvingIntro = ({ onStart }) => {
   return (
     <div style={{
       width: '100%',
@@ -149,35 +149,6 @@ const PurposeCarvingIntro = ({ onStart, onSkip }) => {
         >
           開始する →
         </button>
-
-        {/* スキップリンク */}
-        <div style={{
-          marginTop: '20px',
-          textAlign: 'center'
-        }}>
-          <button
-            onClick={onSkip}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#9ca3af',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              padding: '8px',
-              transition: 'color 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.color = '#6b7280';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.color = '#9ca3af';
-            }}
-          >
-            スキップして創造性診断へ
-          </button>
-        </div>
       </div>
     </div>
   );

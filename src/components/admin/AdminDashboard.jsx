@@ -16,6 +16,7 @@ const AdminDashboard = () => {
   const [memo, setMemo] = useState('');
   const [isSavingMemo, setIsSavingMemo] = useState(false);
   const [usingSampleData, setUsingSampleData] = useState(false);
+  const [debugView, setDebugView] = useState('dashboard'); // dashboard, lifeReflection, type1, type2, results
 
   // 簡易パスワード認証（本番環境では環境変数から取得）
   const ADMIN_PASSWORD = 'afflatus2025';
@@ -763,6 +764,192 @@ const AdminDashboard = () => {
           >
             🔄 更新
           </button>
+        </div>
+      </div>
+
+      {/* デバッグ・テスト用ナビゲーション */}
+      <div style={{
+        maxWidth: '1600px',
+        margin: '0 auto 20px',
+        backgroundColor: 'white',
+        padding: '16px 30px',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{
+          fontSize: '12px',
+          color: '#9ca3af',
+          marginBottom: '12px',
+          fontWeight: '600'
+        }}>
+          デバッグ・テストモード
+        </div>
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          <a
+            href="/"
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              transition: 'all 0.2s',
+              display: 'inline-block'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e5e7eb';
+              e.target.style.borderColor = '#d1d5db';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#f3f4f6';
+              e.target.style.borderColor = '#e5e7eb';
+            }}
+          >
+            🏠 診断トップページ
+          </a>
+          <button
+            onClick={() => {
+              // Life Reflectionのトップページを新しいタブで開く
+              window.open('/#lifeReflection', '_blank');
+            }}
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e5e7eb';
+              e.target.style.borderColor = '#d1d5db';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#f3f4f6';
+              e.target.style.borderColor = '#e5e7eb';
+            }}
+          >
+            📖 Life Reflection
+          </button>
+          <button
+            onClick={() => {
+              window.open('/#type1', '_blank');
+            }}
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e5e7eb';
+              e.target.style.borderColor = '#d1d5db';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#f3f4f6';
+              e.target.style.borderColor = '#e5e7eb';
+            }}
+          >
+            ⚡ タイプ1診断
+          </button>
+          <button
+            onClick={() => {
+              window.open('/#type2', '_blank');
+            }}
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e5e7eb';
+              e.target.style.borderColor = '#d1d5db';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#f3f4f6';
+              e.target.style.borderColor = '#e5e7eb';
+            }}
+          >
+            🧠 タイプ2診断
+          </button>
+          <button
+            onClick={() => {
+              window.open('/#results', '_blank');
+            }}
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e5e7eb';
+              e.target.style.borderColor = '#d1d5db';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#f3f4f6';
+              e.target.style.borderColor = '#e5e7eb';
+            }}
+          >
+            📊 結果画面サンプル
+          </button>
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/?debug=true';
+            }}
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              backgroundColor: '#f3f4f6',
+              color: '#374151',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              transition: 'all 0.2s',
+              display: 'inline-block'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e5e7eb';
+              e.target.style.borderColor = '#d1d5db';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#f3f4f6';
+              e.target.style.borderColor = '#e5e7eb';
+            }}
+          >
+            🐛 デバッグページ
+          </a>
         </div>
       </div>
 

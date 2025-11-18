@@ -8,8 +8,8 @@ import { generateRandomKeywordSet } from '../../utils/keywordSelector';
 import { calculateScores } from '../../utils/scoreCalculator';
 import { createSession, saveAfflatusResponse } from '../../services/supabase';
 
-const IntegratedDiagnosisFlow = ({ onBack }) => {
-  const [phase, setPhase] = useState('basicInfo'); // basicInfo, lifeReflection, instruction, type1, type2, results
+const IntegratedDiagnosisFlow = ({ onBack, initialPhase = null }) => {
+  const [phase, setPhase] = useState(initialPhase || 'basicInfo'); // basicInfo, lifeReflection, instruction, type1, type2, results
   const [basicInfo, setBasicInfo] = useState(null);
   const [lifeReflectionData, setLifeReflectionData] = useState(null);
   const [type1Results, setType1Results] = useState(null);
@@ -21,6 +21,43 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
   const [creativeExperience, setCreativeExperience] = useState(0.5);
   const [isDragging, setIsDragging] = useState(false);
   const [hasMovedSlider, setHasMovedSlider] = useState(false);
+
+  // initialPhaseが設定されている場合（デバッグモード）、サンプルデータを設定
+  useEffect(() => {
+    if (initialPhase) {
+      setBasicInfo({
+        name: 'デバッグユーザー',
+        title: 'テスター',
+        creativeExperience: 0.7
+      });
+
+      if (initialPhase === 'type2' || initialPhase === 'results') {
+        setType1Results({
+          motivation: 0.7,
+          generation: 0.3,
+          progress: 0.6,
+          value: 0.8,
+          expression: 0.4,
+          thinking: 0.5,
+          execution: 0.7,
+          collaboration: 0.2
+        });
+      }
+
+      if (initialPhase === 'results') {
+        setType2Results({
+          motivation: 0.5,
+          generation: 0.6,
+          progress: 0.4,
+          value: 0.7,
+          expression: 0.3,
+          thinking: 0.8,
+          execution: 0.5,
+          collaboration: 0.6
+        });
+      }
+    }
+  }, [initialPhase]);
 
   // キーワードセットをランダム生成
   useEffect(() => {
@@ -527,104 +564,6 @@ const IntegratedDiagnosisFlow = ({ onBack }) => {
               cursor: pointer;
             }
           `}</style>
-        </div>
-
-        {/* デバッグ用ショートカット（コンテンツ外） */}
-        <div style={{
-          width: '100%',
-          maxWidth: '800px',
-          marginTop: '20px',
-          paddingTop: '16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.2)'
-        }}>
-          <div style={{
-            fontSize: '11px',
-            color: 'rgba(255, 255, 255, 0.5)',
-            marginBottom: '8px',
-            textAlign: 'center'
-          }}>
-            デバッグ・説明用
-          </div>
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            fontSize: '12px'
-          }}>
-            <button
-              onClick={() => setPhase('type1')}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                fontSize: '12px',
-                fontWeight: '500',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                color: 'rgba(255, 255, 255, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                opacity: 0.7
-              }}
-            >
-              タイプ1のみ
-            </button>
-            <button
-              onClick={() => setPhase('type2')}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                fontSize: '12px',
-                fontWeight: '500',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                color: 'rgba(255, 255, 255, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                opacity: 0.7
-              }}
-            >
-              タイプ2のみ
-            </button>
-            <button
-              onClick={() => {
-                // サンプルデータを設定
-                setType1Results({
-                  motivation: 0.7,
-                  generation: 0.3,
-                  progress: 0.6,
-                  value: 0.8,
-                  expression: 0.4,
-                  thinking: 0.5,
-                  execution: 0.7,
-                  collaboration: 0.2
-                });
-                setType2Results({
-                  motivation: 0.5,
-                  generation: 0.6,
-                  progress: 0.4,
-                  value: 0.7,
-                  expression: 0.3,
-                  thinking: 0.8,
-                  execution: 0.5,
-                  collaboration: 0.6
-                });
-                setPhase('results');
-              }}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                fontSize: '12px',
-                fontWeight: '500',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                color: 'rgba(255, 255, 255, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                opacity: 0.7
-              }}
-            >
-              結果画面（サンプル）
-            </button>
-          </div>
         </div>
       </div>
     );
