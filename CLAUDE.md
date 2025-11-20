@@ -2725,12 +2725,123 @@ e7090a2 - Add MetaCreativity Radio section with speech bubble design (2025-11-18
 
 ---
 
-**更新日**: 2025-11-18
-**最終更新**: メタクリラジオセクション追加完了、ユーザーテスト問題の調査開始
+## 🖼️ Life Reflection画像追加とUI改善（2025-11-21）
+
+### 実装内容 ✅
+
+#### 1. Life Reflection説明セクションへの画像追加
+**ファイル**: [LifeReflectionPage.jsx](src/components/prototypes/LifeReflectionPage.jsx)
+
+**背景**:
+Life Reflectionの説明セクション（開閉可能）に視覚的な要素を追加して、ユーザー体験を向上させる。
+
+**追加した画像**:
+1. **fethi-bouhaouchine-fTVKDOvlVVE-unsplash.jpg**
+   - 配置位置: 「ひとつめ、ゆっくりと目を閉じて〜」の上
+   - 内容: 目を閉じて振り返るイメージ
+   - サイズ: 66%幅、中央配置
+   - スタイル: borderRadius: 8px、marginBottom: 16px
+
+2. **merci-l-PTXAirn4qvw-unsplash.jpg**
+   - 配置位置: 「ふたつめ、その思いついたことをあなたなりの言葉で説明してください」の上
+   - 内容: 言葉で説明するイメージ
+   - サイズ: 66%幅、中央配置
+   - スタイル: borderRadius: 8px、marginBottom: 16px
+
+**技術的な実装**:
+```javascript
+// 画像のimport
+import image1 from '../../assets/fethi-bouhaouchine-fTVKDOvlVVE-unsplash.jpg';
+import image2 from '../../assets/merci-l-PTXAirn4qvw-unsplash.jpg';
+
+// 画像の表示
+<img
+  src={image1}
+  alt="目を閉じて振り返る"
+  style={{
+    width: '66%',
+    borderRadius: '8px',
+    marginBottom: '16px',
+    display: 'block',
+    marginLeft: 'auto',
+    marginRight: 'auto'
+  }}
+/>
+```
+
+#### 2. テキスト修正
+**変更内容**: 例文の中の「スーパーファミコン」を「ファミコン」に修正
+
+**変更前**:
+```
+例えば「スーパーファミコンと一緒に買ったスーパーマリオ、...」
+```
+
+**変更後**:
+```
+例えば「ファミコンと一緒に買ったスーパーマリオ、...」
+```
+
+#### 3. 管理画面リンクの復元
+**ファイル**: [BasicInfoInput.jsx](src/components/production/BasicInfoInput.jsx)
+
+**変更内容**:
+- トップページ（基本情報入力画面）に管理画面へのリンクを追加
+- 位置: 「次へ →」ボタンの下
+- スタイル: 小さいグレーのテキストリンク（fontSize: 12px、opacity: 0.7）
+- テキスト: 「管理画面（PC専用）」
+
+**実装**:
+```javascript
+<div style={{
+  marginTop: '30px',
+  textAlign: 'center'
+}}>
+  <a
+    href="/admin"
+    style={{
+      fontSize: '12px',
+      color: '#9ca3af',
+      textDecoration: 'none',
+      opacity: 0.7,
+      transition: 'opacity 0.2s'
+    }}
+    onMouseEnter={(e) => e.target.style.opacity = '1'}
+    onMouseLeave={(e) => e.target.style.opacity = '0.7'}
+  >
+    管理画面（PC専用）
+  </a>
+</div>
+```
+
+### Git履歴
+```bash
+fb87a43 - Add Life Reflection images and restore admin link (2025-11-21)
+e7090a2 - Add MetaCreativity Radio section with speech bubble design (2025-11-18)
+```
+
+### 検証済み機能
+✅ Life Reflection説明セクションに2枚の画像追加
+✅ 画像の66%幅リサイズと中央配置
+✅ 例文テキストの修正（スーパーファミコン → ファミコン）
+✅ トップページに管理画面リンク追加
+✅ GitHubへのプッシュ完了
+✅ Netlify自動デプロイ
+
+### UX改善ポイント
+- **視覚的な誘導**: 説明セクションに画像を追加することで、ユーザーが「目を閉じて振り返る」「言葉で説明する」という行為を具体的にイメージしやすくなった
+- **サイズ調整**: 66%幅にすることで、画像が支配的にならず、テキストとバランスの取れたレイアウトを実現
+- **管理画面へのアクセス**: 小さく控えめなリンクで、必要な人（管理者）だけが気づくデザイン
+
+---
+
+**更新日**: 2025-11-21
+**最終更新**: Life Reflection画像追加と管理画面リンク復元完了
 **セッション内容**:
-- メタクリラジオ紹介セクション追加（吹き出しデザイン）
-- リンクボタンのカラー変更（アンバー/イエロー系）
-- GitHubプッシュ＆Netlifyデプロイ
-- ユーザーテストで発見された問題の調査開始
-**次回セッション**: 操作エラーとデバッグモードリンク問題の解決
+- Life Reflection説明セクションに2枚の画像を追加（fethi-bouhaouchine、merci-l）
+- 画像を66%幅にリサイズして中央配置
+- 例文のテキスト修正（スーパーファミコン → ファミコン）
+- トップページに管理画面リンクを復元
+- GitHubプッシュ＆Netlifyデプロイ完了
+**次回セッション**: 追加のUI改善、またはユーザーフィードバック対応
 **作成者**: tamkai + Claude Code
