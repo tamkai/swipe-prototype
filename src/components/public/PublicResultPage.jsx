@@ -309,17 +309,27 @@ const sanitizeReportHtml = (html) => {
 
   let sanitized = html;
 
-  // 1. DOCTYPE, html, head, bodyタグを除去
+  // 1. <head>内の<style>タグを抽出して保持
+  let extractedStyles = '';
+  const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/gi);
+  if (headMatch) {
+    const styleMatches = headMatch[0].match(/<style[^>]*>[\s\S]*?<\/style>/gi);
+    if (styleMatches) {
+      extractedStyles = styleMatches.join('\n');
+    }
+  }
+
+  // 2. DOCTYPE, html, head, bodyタグを除去
   // <!DOCTYPE ...>を除去
   sanitized = sanitized.replace(/<!DOCTYPE[^>]*>/gi, '');
   // <html ...>と</html>を除去
   sanitized = sanitized.replace(/<\/?html[^>]*>/gi, '');
-  // <head>...</head>全体を除去（内部のスタイルは後で処理）
+  // <head>...</head>全体を除去
   sanitized = sanitized.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
   // <body ...>と</body>を除去
   sanitized = sanitized.replace(/<\/?body[^>]*>/gi, '');
 
-  // 2. 画像パスを絶対パスに変換
+  // 3. 画像パスを絶対パスに変換
   // src="metakuri.png" → src="/metakuri.png"
   // src="./metakuri.png" → src="/metakuri.png"
   // 既に絶対パス（/で始まる）やURL（http://やhttps://で始まる）の場合は変更しない
@@ -332,7 +342,23 @@ const sanitizeReportHtml = (html) => {
     }
   );
 
-  return sanitized.trim();
+  // 4. 画像サイズを制限するスタイルを追加
+  const imageConstraintStyle = `
+    <style>
+      .report-content img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 1em auto;
+      }
+    </style>
+  `;
+
+  // 5. 抽出したスタイル + 画像制限スタイル + コンテンツを結合
+  // コンテンツをreport-contentクラスでラップ
+  sanitized = `${extractedStyles}${imageConstraintStyle}<div class="report-content">${sanitized.trim()}</div>`;
+
+  return sanitized;
 };
 
 // レポートタブ
