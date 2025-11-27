@@ -16,6 +16,8 @@ import Type2DiagnosisFlow from './components/production/Type2DiagnosisFlow';
 import IntegratedDiagnosisFlow from './components/production/IntegratedDiagnosisFlow';
 // Admin (管理画面)
 import AdminDashboard from './components/admin/AdminDashboard';
+// Public (公開ページ)
+import PublicResultPage from './components/public/PublicResultPage';
 import { questions } from './data/questions';
 import { assessmentQuestions } from './data/assessmentQuestions';
 import { assessmentQuestionsC } from './data/assessmentQuestionsC';
@@ -48,6 +50,18 @@ function App() {
   // 管理画面へのルーティング
   if (currentRoute === '/admin') {
     return <AdminDashboard />;
+  }
+
+  // 公開結果ページへのルーティング (/results/:uuid)
+  const resultsMatch = currentRoute.match(/^\/results\/([a-f0-9-]+)$/i);
+  if (resultsMatch) {
+    const uuid = resultsMatch[1];
+    return <PublicResultPage uuid={uuid} />;
+  }
+
+  // プレビューモード (/results/preview)
+  if (currentRoute === '/results/preview') {
+    return <PublicResultPage uuid="preview" previewMode={true} />;
   }
 
   const [selectedPattern, setSelectedPattern] = useState(null);

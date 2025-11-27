@@ -377,3 +377,177 @@ export const savePurposeCarvingResponse = async (sessionId, responses) => {
     throw error;
   }
 };
+
+// ==========================================
+// レポート公開機能
+// ==========================================
+
+/**
+ * レポートを公開する（UUIDを発行）
+ * @param {number} responseId - 診断結果ID
+ * @returns {Promise<Object>} 更新されたデータ（public_uuid含む）
+ */
+export const publishReport = async (responseId) => {
+  try {
+    const { data, error } = await supabase
+      .from('afflatus_responses')
+      .update({
+        public_uuid: crypto.randomUUID(),
+        report_published_at: new Date().toISOString()
+      })
+      .eq('id', responseId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log('レポート公開成功:', data.public_uuid);
+    return data;
+  } catch (error) {
+    console.error('レポート公開エラー:', error);
+    throw error;
+  }
+};
+
+/**
+ * レポートを非公開にする
+ * @param {number} responseId - 診断結果ID
+ * @returns {Promise<Object>} 更新されたデータ
+ */
+export const unpublishReport = async (responseId) => {
+  try {
+    const { data, error } = await supabase
+      .from('afflatus_responses')
+      .update({
+        public_uuid: null,
+        report_published_at: null
+      })
+      .eq('id', responseId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log('レポート非公開成功:', responseId);
+    return data;
+  } catch (error) {
+    console.error('レポート非公開エラー:', error);
+    throw error;
+  }
+};
+
+/**
+ * HTMLレポートを保存
+ * @param {number} responseId - 診断結果ID
+ * @param {string} html - HTMLソースコード
+ * @returns {Promise<Object>} 更新されたデータ
+ */
+export const saveReportHtml = async (responseId, html) => {
+  try {
+    const { data, error } = await supabase
+      .from('afflatus_responses')
+      .update({
+        report_html: html,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', responseId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log('HTMLレポート保存成功:', responseId);
+    return data;
+  } catch (error) {
+    console.error('HTMLレポート保存エラー:', error);
+    throw error;
+  }
+};
+
+/**
+ * PDF URLを保存
+ * @param {number} responseId - 診断結果ID
+ * @param {string} pdfUrl - PDFのURL
+ * @returns {Promise<Object>} 更新されたデータ
+ */
+export const saveReportPdfUrl = async (responseId, pdfUrl) => {
+  try {
+    const { data, error } = await supabase
+      .from('afflatus_responses')
+      .update({
+        report_pdf_url: pdfUrl,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', responseId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log('PDF URL保存成功:', responseId);
+    return data;
+  } catch (error) {
+    console.error('PDF URL保存エラー:', error);
+    throw error;
+  }
+};
+
+/**
+ * 公開UUIDから診断結果を取得（公開ページ用）
+ * @param {string} publicUuid - 公開UUID
+ * @returns {Promise<Object|null>} 診断結果（公開されていない場合はnull）
+ */
+export const fetchAfflatusResponseByPublicUuid = async (publicUuid) => {
+  try {
+    // メインテーブルからデータを取得
+    const { data: response, error: responseError } = await supabase
+      .from('afflatus_responses')
+      .select('*')
+      .eq('public_uuid', publicUuid)
+      .single();
+
+    if (responseError) {
+      if (responseError.code === 'PGRST116') {
+        // レコードが見つからない
+        return null;
+      }
+      throw responseError;
+    }
+
+    // 公開されていない場合（UUIDはあるが公開日時がない）
+    if (!response.report_published_at) {
+      return null;
+    }
+
+    // Life Reflectionを取得
+    const { data: lifeReflection } = await supabase
+      .from('life_reflections')
+      .select('*')
+      .eq('response_id', response.id)
+      .single();
+
+    // 価値観を取得
+    const { data: values } = await supabase
+      .from('personal_values')
+      .select('*')
+      .eq('response_id', response.id)
+      .single();
+
+    // パーパスを取得
+    const { data: purpose } = await supabase
+      .from('personal_purposes')
+      .select('*')
+      .eq('response_id', response.id)
+      .single();
+
+    return {
+      ...response,
+      life_reflection: lifeReflection,
+      personal_values: values,
+      personal_purpose: purpose
+    };
+  } catch (error) {
+    console.error('公開レポート取得エラー:', error);
+    throw error;
+  }
+};

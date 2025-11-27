@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
-import { fetchAfflatusResponses, saveInterviewMemo } from '../../services/supabase';
+import {
+  fetchAfflatusResponses,
+  saveInterviewMemo,
+  publishReport,
+  unpublishReport,
+  saveReportHtml,
+  saveReportPdfUrl
+} from '../../services/supabase';
 import { dimensionsData } from '../../data/dimensionsData';
 import RichTextEditor from './RichTextEditor';
 import sampleData from '../../../scripts/sampleData.json';
@@ -17,6 +24,13 @@ const AdminDashboard = () => {
   const [isSavingMemo, setIsSavingMemo] = useState(false);
   const [usingSampleData, setUsingSampleData] = useState(false);
   const [debugView, setDebugView] = useState('dashboard'); // dashboard, lifeReflection, type1, type2, results
+
+  // レポート管理用ステート
+  const [reportHtml, setReportHtml] = useState('');
+  const [reportPdfUrl, setReportPdfUrl] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isSavingReport, setIsSavingReport] = useState(false);
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
 
   // 簡易パスワード認証（本番環境では環境変数から取得）
   const ADMIN_PASSWORD = 'afflatus2025';
@@ -201,7 +215,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // 参加者選択時にメモを読み込み
+  // 参加者選択時にメモとレポート情報を読み込み
   const handleSelectParticipant = (participant) => {
     setSelectedParticipant(participant);
     setMemo(participant.interview_memo || '');
@@ -210,6 +224,11 @@ const AdminDashboard = () => {
     // 元データを保存（変更検知用）
     setOriginalPurpose(participant.personal_purpose?.purpose || '');
     setOriginalValues(participant.life_reflection?.values || ['', '', '']);
+
+    // レポート情報を読み込み
+    setReportHtml(participant.report_html || '');
+    setReportPdfUrl(participant.report_pdf_url || '');
+    setShowHtmlPreview(false);
   };
 
   // パーパス更新
@@ -279,6 +298,155 @@ const AdminDashboard = () => {
       alert('メモの保存に失敗しました');
     } finally {
       setIsSavingMemo(false);
+    }
+  };
+
+  // レポート公開
+  const handlePublishReport = async () => {
+    if (!selectedParticipant) return;
+    if (usingSampleData) {
+      alert('サンプルデータのため、公開できません');
+      return;
+    }
+
+    try {
+      setIsPublishing(true);
+      const updatedData = await publishReport(selectedParticipant.id);
+
+      // ローカルのデータも更新
+      setResponses(prev => prev.map(p =>
+        p.id === selectedParticipant.id ? {
+          ...p,
+          public_uuid: updatedData.public_uuid,
+          report_published_at: updatedData.report_published_at
+        } : p
+      ));
+      setSelectedParticipant(prev => ({
+        ...prev,
+        public_uuid: updatedData.public_uuid,
+        report_published_at: updatedData.report_published_at
+      }));
+
+      alert('レポートを公開しました');
+    } catch (error) {
+      console.error('レポート公開エラー:', error);
+      alert('レポートの公開に失敗しました');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  // レポート非公開
+  const handleUnpublishReport = async () => {
+    if (!selectedParticipant) return;
+    if (usingSampleData) {
+      alert('サンプルデータのため、操作できません');
+      return;
+    }
+
+    if (!confirm('本当にレポートを非公開にしますか？')) return;
+
+    try {
+      setIsPublishing(true);
+      await unpublishReport(selectedParticipant.id);
+
+      // ローカルのデータも更新
+      setResponses(prev => prev.map(p =>
+        p.id === selectedParticipant.id ? {
+          ...p,
+          public_uuid: null,
+          report_published_at: null
+        } : p
+      ));
+      setSelectedParticipant(prev => ({
+        ...prev,
+        public_uuid: null,
+        report_published_at: null
+      }));
+
+      alert('レポートを非公開にしました');
+    } catch (error) {
+      console.error('レポート非公開エラー:', error);
+      alert('レポートの非公開に失敗しました');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  // HTMLレポート保存
+  const handleSaveReportHtml = async () => {
+    if (!selectedParticipant) return;
+    if (usingSampleData) {
+      alert('サンプルデータのため、保存できません');
+      return;
+    }
+
+    try {
+      setIsSavingReport(true);
+      await saveReportHtml(selectedParticipant.id, reportHtml);
+
+      // ローカルのデータも更新
+      setResponses(prev => prev.map(p =>
+        p.id === selectedParticipant.id ? { ...p, report_html: reportHtml } : p
+      ));
+      setSelectedParticipant(prev => ({ ...prev, report_html: reportHtml }));
+
+      alert('HTMLレポートを保存しました');
+    } catch (error) {
+      console.error('HTMLレポート保存エラー:', error);
+      alert('HTMLレポートの保存に失敗しました');
+    } finally {
+      setIsSavingReport(false);
+    }
+  };
+
+  // PDF URL保存
+  const handleSaveReportPdfUrl = async () => {
+    if (!selectedParticipant) return;
+    if (usingSampleData) {
+      alert('サンプルデータのため、保存できません');
+      return;
+    }
+
+    try {
+      setIsSavingReport(true);
+      await saveReportPdfUrl(selectedParticipant.id, reportPdfUrl);
+
+      // ローカルのデータも更新
+      setResponses(prev => prev.map(p =>
+        p.id === selectedParticipant.id ? { ...p, report_pdf_url: reportPdfUrl } : p
+      ));
+      setSelectedParticipant(prev => ({ ...prev, report_pdf_url: reportPdfUrl }));
+
+      alert('PDF URLを保存しました');
+    } catch (error) {
+      console.error('PDF URL保存エラー:', error);
+      alert('PDF URLの保存に失敗しました');
+    } finally {
+      setIsSavingReport(false);
+    }
+  };
+
+  // 公開URLを生成
+  const getPublicUrl = (uuid) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/results/${uuid}`;
+  };
+
+  // URLをコピー
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('URLをコピーしました');
+    } catch {
+      // フォールバック
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      alert('URLをコピーしました');
     }
   };
 
@@ -1686,16 +1854,15 @@ const AdminDashboard = () => {
               flex: '0 0 40%',
               display: 'flex',
               flexDirection: 'column',
-              overflow: 'hidden'
+              overflowY: 'auto'
             }}>
               {/* インタビューメモ（大きく配置） */}
               <div style={{
                 flex: '1 1 auto',
                 padding: '30px 40px',
-                overflowY: 'auto',
                 borderBottom: '1px solid #e5e7eb',
                 backgroundColor: 'white',
-                minHeight: '400px'
+                minHeight: '300px'
               }}>
                 <div style={{
                   display: 'flex',
@@ -1884,6 +2051,320 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* レポート管理セクション */}
+              <div style={{
+                flex: '0 0 auto',
+                padding: '20px 40px',
+                backgroundColor: 'white',
+                borderTop: '2px solid #374151'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  color: '#1f2937',
+                  marginBottom: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  📄 レポート管理
+                  {selectedParticipant.public_uuid ? (
+                    <span style={{
+                      padding: '4px 10px',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      borderRadius: '12px'
+                    }}>
+                      🟢 公開中
+                    </span>
+                  ) : (
+                    <span style={{
+                      padding: '4px 10px',
+                      backgroundColor: '#6b7280',
+                      color: 'white',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      borderRadius: '12px'
+                    }}>
+                      ⚪ 非公開
+                    </span>
+                  )}
+                </h3>
+
+                {/* 公開URL表示（公開中の場合） */}
+                {selectedParticipant.public_uuid && (
+                  <div style={{
+                    marginBottom: '15px',
+                    padding: '12px',
+                    backgroundColor: '#f0fdf4',
+                    border: '1px solid #86efac',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#166534',
+                      fontWeight: '600',
+                      marginBottom: '6px'
+                    }}>
+                      公開URL
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      gap: '8px',
+                      alignItems: 'center'
+                    }}>
+                      <input
+                        type="text"
+                        value={getPublicUrl(selectedParticipant.public_uuid)}
+                        readOnly
+                        style={{
+                          flex: 1,
+                          padding: '8px 12px',
+                          fontSize: '13px',
+                          backgroundColor: 'white',
+                          border: '1px solid #86efac',
+                          borderRadius: '6px',
+                          fontFamily: 'monospace'
+                        }}
+                      />
+                      <button
+                        onClick={() => copyToClipboard(getPublicUrl(selectedParticipant.public_uuid))}
+                        style={{
+                          padding: '8px 12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          backgroundColor: '#22c55e',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        📋 コピー
+                      </button>
+                      <a
+                        href={getPublicUrl(selectedParticipant.public_uuid)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '8px 12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          textDecoration: 'none',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        🔗 開く
+                      </a>
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#166534',
+                      marginTop: '6px'
+                    }}>
+                      公開日時: {new Date(selectedParticipant.report_published_at).toLocaleString('ja-JP')}
+                    </div>
+                  </div>
+                )}
+
+                {/* 公開/非公開ボタン */}
+                <div style={{
+                  display: 'flex',
+                  gap: '10px',
+                  marginBottom: '15px'
+                }}>
+                  {selectedParticipant.public_uuid ? (
+                    <button
+                      onClick={handleUnpublishReport}
+                      disabled={isPublishing}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: isPublishing ? 'not-allowed' : 'pointer',
+                        opacity: isPublishing ? 0.6 : 1
+                      }}
+                    >
+                      {isPublishing ? '処理中...' : '🔒 非公開にする'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handlePublishReport}
+                      disabled={isPublishing}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        backgroundColor: '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: isPublishing ? 'not-allowed' : 'pointer',
+                        opacity: isPublishing ? 0.6 : 1
+                      }}
+                    >
+                      {isPublishing ? '処理中...' : '🌐 公開する（UUID発行）'}
+                    </button>
+                  )}
+                </div>
+
+                {/* HTMLレポート入力 */}
+                <div style={{ marginBottom: '15px' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px'
+                  }}>
+                    <label style={{
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: '#374151'
+                    }}>
+                      HTMLレポート
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => setShowHtmlPreview(!showHtmlPreview)}
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          backgroundColor: showHtmlPreview ? '#3b82f6' : '#e5e7eb',
+                          color: showHtmlPreview ? 'white' : '#374151',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {showHtmlPreview ? '📝 編集' : '👁️ プレビュー'}
+                      </button>
+                      <button
+                        onClick={handleSaveReportHtml}
+                        disabled={isSavingReport || reportHtml === (selectedParticipant.report_html || '')}
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          backgroundColor: (isSavingReport || reportHtml === (selectedParticipant.report_html || '')) ? '#d1d5db' : '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: (isSavingReport || reportHtml === (selectedParticipant.report_html || '')) ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {isSavingReport ? '保存中...' : '💾 保存'}
+                      </button>
+                    </div>
+                  </div>
+                  {showHtmlPreview ? (
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '200px',
+                        padding: '12px',
+                        backgroundColor: 'white',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        overflowY: 'auto',
+                        fontSize: '14px',
+                        lineHeight: '1.6'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: reportHtml }}
+                    />
+                  ) : (
+                    <textarea
+                      value={reportHtml}
+                      onChange={(e) => setReportHtml(e.target.value)}
+                      placeholder="HTMLソースコードを貼り付けてください..."
+                      style={{
+                        width: '100%',
+                        height: '200px',
+                        padding: '12px',
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        backgroundColor: 'white',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        resize: 'vertical',
+                        boxSizing: 'border-box',
+                        lineHeight: '1.5'
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* PDF URL入力 */}
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px'
+                  }}>
+                    <label style={{
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: '#374151'
+                    }}>
+                      PDFダウンロードURL
+                    </label>
+                    <button
+                      onClick={handleSaveReportPdfUrl}
+                      disabled={isSavingReport || reportPdfUrl === (selectedParticipant.report_pdf_url || '')}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        backgroundColor: (isSavingReport || reportPdfUrl === (selectedParticipant.report_pdf_url || '')) ? '#d1d5db' : '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: (isSavingReport || reportPdfUrl === (selectedParticipant.report_pdf_url || '')) ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {isSavingReport ? '保存中...' : '💾 保存'}
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={reportPdfUrl}
+                    onChange={(e) => setReportPdfUrl(e.target.value)}
+                    placeholder="https://drive.google.com/... (Google DriveのURLなど)"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      fontSize: '13px',
+                      backgroundColor: 'white',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#6b7280',
+                    marginTop: '6px'
+                  }}>
+                    ※ Google DriveのPDFは「リンクを知っている全員」に共有設定してください
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -17,7 +17,9 @@ const DimensionSlider = ({
   description = '',
   showPositionText = false,
   compact = false,
-  showLegend = false // 凡例表示フラグ（最初の軸のみtrue）
+  showLegend = false, // 凡例表示フラグ（最初の軸のみtrue）
+  hideKeywords = false, // キーワード非表示フラグ
+  hideDimensionTitle = false // 軸名非表示フラグ（外部で表示する場合）
 }) => {
   const [localValue, setLocalValue] = useState(value);
   const [isDragging, setIsDragging] = useState(false);
@@ -121,8 +123,8 @@ const DimensionSlider = ({
       overflow: 'hidden',
       boxSizing: 'border-box'
     }}>
-      {/* 次元名（暗い帯） - compactモードまたはreadOnlyモードのみ表示 */}
-      {(compact || readOnly) && (
+      {/* 次元名（暗い帯） - compactモードまたはreadOnlyモードのみ表示、hideDimensionTitleがtrueの場合は非表示 */}
+      {!hideDimensionTitle && (compact || readOnly) && (
         compact ? (
           <div style={{
             backgroundColor: '#1f2937',
@@ -339,60 +341,62 @@ const DimensionSlider = ({
           )}
         </div>
 
-        {/* キーワード表示（バーの下、2x2行）600px中央配置 */}
-        <div style={{
-          width: '100%',
-          maxWidth: '600px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '15px',
-          gap: '20px'
-        }}>
-          {/* 左側キーワード */}
-          <div style={{ flex: 1, textAlign: 'left' }}>
-            {/* 1行目: 最初の2つをスラッシュで */}
-            <div style={{
-              fontSize: '12px',
-              color: '#6b7280',
-              marginBottom: '4px'
-            }}>
-              {displayKeywordsA.slice(0, 2).join(' / ')}
-            </div>
-            {/* 2行目: 残りの2つをスラッシュで */}
-            {displayKeywordsA.length > 2 && (
+        {/* キーワード表示（バーの下、2x2行）600px中央配置 - hideKeywordsがtrueの場合は非表示 */}
+        {!hideKeywords && (
+          <div style={{
+            width: '100%',
+            maxWidth: '600px',
+            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginTop: '15px',
+            gap: '20px'
+          }}>
+            {/* 左側キーワード */}
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              {/* 1行目: 最初の2つをスラッシュで */}
               <div style={{
                 fontSize: '12px',
                 color: '#6b7280',
                 marginBottom: '4px'
               }}>
-                {displayKeywordsA.slice(2, 4).join(' / ')}
+                {displayKeywordsA.slice(0, 2).join(' / ')}
               </div>
-            )}
-          </div>
+              {/* 2行目: 残りの2つをスラッシュで */}
+              {displayKeywordsA.length > 2 && (
+                <div style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  marginBottom: '4px'
+                }}>
+                  {displayKeywordsA.slice(2, 4).join(' / ')}
+                </div>
+              )}
+            </div>
 
-          {/* 右側キーワード */}
-          <div style={{ flex: 1, textAlign: 'right' }}>
-            {/* 1行目: 最初の2つをスラッシュで */}
-            <div style={{
-              fontSize: '12px',
-              color: '#6b7280',
-              marginBottom: '4px'
-            }}>
-              {displayKeywordsB.slice(0, 2).join(' / ')}
-            </div>
-            {/* 2行目: 残りの2つをスラッシュで */}
-            {displayKeywordsB.length > 2 && (
+            {/* 右側キーワード */}
+            <div style={{ flex: 1, textAlign: 'right' }}>
+              {/* 1行目: 最初の2つをスラッシュで */}
               <div style={{
                 fontSize: '12px',
                 color: '#6b7280',
                 marginBottom: '4px'
               }}>
-                {displayKeywordsB.slice(2, 4).join(' / ')}
+                {displayKeywordsB.slice(0, 2).join(' / ')}
               </div>
-            )}
+              {/* 2行目: 残りの2つをスラッシュで */}
+              {displayKeywordsB.length > 2 && (
+                <div style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  marginBottom: '4px'
+                }}>
+                  {displayKeywordsB.slice(2, 4).join(' / ')}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 現在の位置表示（600px中央配置） */}
