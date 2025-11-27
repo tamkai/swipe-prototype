@@ -303,6 +303,38 @@ const TabButton = ({ active, onClick, label }) => (
   </button>
 );
 
+// レポートHTMLをサニタイズする関数
+const sanitizeReportHtml = (html) => {
+  if (!html) return '';
+
+  let sanitized = html;
+
+  // 1. DOCTYPE, html, head, bodyタグを除去
+  // <!DOCTYPE ...>を除去
+  sanitized = sanitized.replace(/<!DOCTYPE[^>]*>/gi, '');
+  // <html ...>と</html>を除去
+  sanitized = sanitized.replace(/<\/?html[^>]*>/gi, '');
+  // <head>...</head>全体を除去（内部のスタイルは後で処理）
+  sanitized = sanitized.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+  // <body ...>と</body>を除去
+  sanitized = sanitized.replace(/<\/?body[^>]*>/gi, '');
+
+  // 2. 画像パスを絶対パスに変換
+  // src="metakuri.png" → src="/metakuri.png"
+  // src="./metakuri.png" → src="/metakuri.png"
+  // 既に絶対パス（/で始まる）やURL（http://やhttps://で始まる）の場合は変更しない
+  sanitized = sanitized.replace(
+    /(<img[^>]*\ssrc=["'])(?!\/|https?:\/\/)([^"']+)(["'][^>]*>)/gi,
+    (_match, before, path, after) => {
+      // ./や../を除去して絶対パスに
+      const cleanPath = path.replace(/^\.\//, '').replace(/^\.\.\//, '');
+      return `${before}/${cleanPath}${after}`;
+    }
+  );
+
+  return sanitized.trim();
+};
+
 // レポートタブ
 const ReportTab = ({ data }) => {
   if (!data.report_html) {
@@ -318,6 +350,9 @@ const ReportTab = ({ data }) => {
     );
   }
 
+  // report_htmlをサニタイズ
+  const sanitizedHtml = sanitizeReportHtml(data.report_html);
+
   return (
     <div>
       {/* HTMLレポート表示 */}
@@ -328,7 +363,7 @@ const ReportTab = ({ data }) => {
           padding: '32px',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
         }}
-        dangerouslySetInnerHTML={{ __html: data.report_html }}
+        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
       />
 
       {/* PDFダウンロードボタン（レポート下部） */}
