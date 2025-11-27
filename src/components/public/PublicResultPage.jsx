@@ -732,7 +732,7 @@ const ResponsesTab = ({ data }) => {
                 fontSize: '14px',
                 marginBottom: '8px'
               }}>
-                <span style={{ color: '#3b82f6' }}>
+                <span style={{ color: '#7c3aed' }}>
                   直感判断: <strong>{type1Pole?.name}</strong>
                 </span>
                 <span style={{ color: '#10b981' }}>

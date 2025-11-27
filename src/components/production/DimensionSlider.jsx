@@ -243,7 +243,7 @@ const DimensionSlider = ({
               <span style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: '#374151',
+                color: '#7c3aed',
                 marginBottom: '2px',
                 whiteSpace: 'nowrap'
               }}>
@@ -254,7 +254,7 @@ const DimensionSlider = ({
                 height: 0,
                 borderLeft: '8px solid transparent',
                 borderRight: '8px solid transparent',
-                borderTop: '12px solid #374151',
+                borderTop: '12px solid #7c3aed',
                 marginLeft: value <= 0.05 ? '0' : value >= 0.95 ? 'auto' : 'auto',
                 marginRight: value <= 0.05 ? 'auto' : value >= 0.95 ? '0' : 'auto'
               }} />
@@ -278,14 +278,14 @@ const DimensionSlider = ({
                 height: 0,
                 borderLeft: '8px solid transparent',
                 borderRight: '8px solid transparent',
-                borderBottom: '12px solid #374151',
+                borderBottom: '12px solid #10b981',
                 marginLeft: value2 <= 0.05 ? '0' : value2 >= 0.95 ? 'auto' : 'auto',
                 marginRight: value2 <= 0.05 ? 'auto' : value2 >= 0.95 ? '0' : 'auto'
               }} />
               <span style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: '#374151',
+                color: '#10b981',
                 marginTop: '2px',
                 whiteSpace: 'nowrap'
               }}>
