@@ -153,7 +153,7 @@ const DimensionSlider = ({
         )
       )}
 
-      <div style={{ padding: compact ? '16px' : '24px' }}>
+      <div style={{ padding: compact ? '16px' : (hideKeywords && hideDimensionTitle ? '12px' : '24px') }}>
 
       {/* 説明文（オプション） */}
       {showDescription && description && (

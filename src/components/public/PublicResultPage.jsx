@@ -721,7 +721,7 @@ const ResponsesTab = ({ data }) => {
                 marginBottom: '8px',
                 textAlign: 'center'
               }}>
-                {explanation?.emoji} {dim.dimension}
+                {dim.dimension}
               </div>
 
               {/* あなたの結果（軸名のすぐ下） */}
@@ -747,14 +747,16 @@ const ResponsesTab = ({ data }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '6px',
+                  gap: '8px',
                   margin: '0 auto 12px',
-                  padding: '6px 12px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
+                  padding: '8px 16px',
+                  backgroundColor: '#f3f4f6',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  fontSize: '13px',
-                  color: '#6b7280',
+                  fontSize: '14px',
+                  color: '#374151',
+                  fontWeight: '500',
                   transition: 'all 0.2s ease'
                 }}
               >
