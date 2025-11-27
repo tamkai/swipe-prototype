@@ -1118,6 +1118,34 @@ const AdminDashboard = () => {
           >
             🐛 デバッグページ
           </a>
+          <a
+            href="/results/preview"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              backgroundColor: '#eef2ff',
+              color: '#4338ca',
+              border: '2px solid #c7d2fe',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              textDecoration: 'none',
+              transition: 'all 0.2s',
+              display: 'inline-block'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#e0e7ff';
+              e.target.style.borderColor = '#a5b4fc';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#eef2ff';
+              e.target.style.borderColor = '#c7d2fe';
+            }}
+          >
+            📄 レポート画面サンプル
+          </a>
         </div>
       </div>
 
@@ -1237,7 +1265,7 @@ const AdminDashboard = () => {
               borderRadius: '16px',
               width: '95%',
               maxWidth: '1400px',
-              height: '90vh',
+              maxHeight: '90vh',
               display: 'flex',
               overflow: 'hidden',
               position: 'relative'
@@ -1858,11 +1886,11 @@ const AdminDashboard = () => {
             }}>
               {/* インタビューメモ（大きく配置） */}
               <div style={{
-                flex: '1 1 auto',
+                flex: '0 0 auto',
                 padding: '30px 40px',
                 borderBottom: '1px solid #e5e7eb',
                 backgroundColor: 'white',
-                minHeight: '300px'
+                minHeight: '250px'
               }}>
                 <div style={{
                   display: 'flex',
@@ -2274,19 +2302,17 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   {showHtmlPreview ? (
-                    <div
+                    <iframe
+                      srcDoc={reportHtml}
+                      title="HTMLプレビュー"
                       style={{
                         width: '100%',
                         height: '200px',
-                        padding: '12px',
                         backgroundColor: 'white',
                         border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        overflowY: 'auto',
-                        fontSize: '14px',
-                        lineHeight: '1.6'
+                        borderRadius: '8px'
                       }}
-                      dangerouslySetInnerHTML={{ __html: reportHtml }}
+                      sandbox="allow-same-origin"
                     />
                   ) : (
                     <textarea

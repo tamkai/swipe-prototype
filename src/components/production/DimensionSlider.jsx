@@ -35,11 +35,11 @@ const DimensionSlider = ({
       // 中央付近（±0.1）: グレー
       return '#9ca3af';
     } else if (val < 0.4) {
-      // 左側: 青
-      return '#3b82f6';
+      // 左側: 落ち着いた青
+      return '#6b8cae';
     } else {
-      // 右側: 赤
-      return '#ef4444';
+      // 右側: 落ち着いた赤/コーラル
+      return '#c97b7b';
     }
   }, []);
 
@@ -113,13 +113,16 @@ const DimensionSlider = ({
   const displayKeywordsA = keywords_a || (keyword_a ? [keyword_a] : []);
   const displayKeywordsB = keywords_b || (keyword_b ? [keyword_b] : []);
 
+  // 埋め込みモード（親コンポーネントが白背景を提供する場合）
+  const isEmbedded = hideKeywords && hideDimensionTitle;
+
   return (
     <div style={{
       width: '100%',
       maxWidth: '800px',
-      backgroundColor: 'white',
-      borderRadius: '20px',
-      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+      backgroundColor: isEmbedded ? 'transparent' : 'white',
+      borderRadius: isEmbedded ? '0' : '20px',
+      boxShadow: isEmbedded ? 'none' : '0 10px 30px rgba(0, 0, 0, 0.1)',
       overflow: 'hidden',
       boxSizing: 'border-box'
     }}>
@@ -153,7 +156,7 @@ const DimensionSlider = ({
         )
       )}
 
-      <div style={{ padding: compact ? '16px' : (hideKeywords && hideDimensionTitle ? '12px' : '24px') }}>
+      <div style={{ padding: compact ? '16px' : (hideKeywords && hideDimensionTitle ? '8px' : '24px') }}>
 
       {/* 説明文（オプション） */}
       {showDescription && description && (
@@ -172,8 +175,8 @@ const DimensionSlider = ({
       {/* スライダー本体 */}
       <div style={{
         position: 'relative',
-        marginTop: compact ? '0' : '40px',
-        marginBottom: compact ? '5px' : '40px'
+        marginTop: compact ? '0' : (isEmbedded ? '20px' : '40px'),
+        marginBottom: compact ? '5px' : (isEmbedded ? '20px' : '40px')
       }}>
         {/* 左右の極ラベル */}
         <div style={{
@@ -184,14 +187,14 @@ const DimensionSlider = ({
           <div style={{
             fontSize: '18px',
             fontWeight: '700',
-            color: '#3b82f6'
+            color: '#6b8cae'
           }}>
             {pole_a}
           </div>
           <div style={{
             fontSize: '18px',
             fontWeight: '700',
-            color: '#ef4444'
+            color: '#c97b7b'
           }}>
             {pole_b}
           </div>
@@ -214,7 +217,7 @@ const DimensionSlider = ({
             width: '100%',
             height: '8px',
             borderRadius: '4px',
-            background: 'linear-gradient(to right, #3b82f6, #9ca3af, #ef4444)'
+            background: 'linear-gradient(to right, #6b8cae, #9ca3af, #c97b7b)'
           }} />
 
           {/* 中央ガイドライン */}
@@ -243,7 +246,7 @@ const DimensionSlider = ({
               <span style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: '#7c3aed',
+                color: '#64748b',
                 marginBottom: '2px',
                 whiteSpace: 'nowrap'
               }}>
@@ -254,7 +257,7 @@ const DimensionSlider = ({
                 height: 0,
                 borderLeft: '8px solid transparent',
                 borderRight: '8px solid transparent',
-                borderTop: '12px solid #7c3aed',
+                borderTop: '12px solid #64748b',
                 marginLeft: value <= 0.05 ? '0' : value >= 0.95 ? 'auto' : 'auto',
                 marginRight: value <= 0.05 ? 'auto' : value >= 0.95 ? '0' : 'auto'
               }} />
@@ -278,14 +281,14 @@ const DimensionSlider = ({
                 height: 0,
                 borderLeft: '8px solid transparent',
                 borderRight: '8px solid transparent',
-                borderBottom: '12px solid #10b981',
+                borderBottom: '12px solid #78716c',
                 marginLeft: value2 <= 0.05 ? '0' : value2 >= 0.95 ? 'auto' : 'auto',
                 marginRight: value2 <= 0.05 ? 'auto' : value2 >= 0.95 ? '0' : 'auto'
               }} />
               <span style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: '#10b981',
+                color: '#78716c',
                 marginTop: '2px',
                 whiteSpace: 'nowrap'
               }}>
@@ -430,7 +433,7 @@ const DimensionSlider = ({
           height: 24px;
           border-radius: 50%;
           background: white;
-          border: 3px solid ${localValue < 0.5 ? '#3b82f6' : '#ef4444'};
+          border: 3px solid ${localValue < 0.5 ? '#6b8cae' : '#c97b7b'};
           cursor: ${readOnly ? 'default' : 'pointer'};
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
           transition: all 0.2s ease;
@@ -445,7 +448,7 @@ const DimensionSlider = ({
           height: 24px;
           border-radius: 50%;
           background: white;
-          border: 3px solid ${localValue < 0.5 ? '#3b82f6' : '#ef4444'};
+          border: 3px solid ${localValue < 0.5 ? '#6b8cae' : '#c97b7b'};
           cursor: ${readOnly ? 'default' : 'pointer'};
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
           transition: all 0.2s ease;

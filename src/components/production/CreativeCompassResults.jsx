@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import DimensionSlider from './DimensionSlider';
 import { dimensionsData } from '../../data/dimensionsData';
+import afflatusLogo from '../../logo_002.svg';
 
 const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => {
   const [showDebugText, setShowDebugText] = useState(false);
@@ -139,23 +140,36 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
         textAlign: 'center',
         marginBottom: '20px'
       }}>
+        {/* AFFLATUSロゴ */}
+        <div style={{ marginBottom: '12px' }}>
+          <img
+            src={afflatusLogo}
+            alt="AFFLATUS"
+            style={{
+              height: '100px',
+              filter: 'brightness(0) invert(1)',
+              opacity: 0.9
+            }}
+          />
+        </div>
+        <p style={{
+          color: 'white',
+          fontSize: '18px',
+          fontWeight: '700',
+          opacity: 0.95,
+          marginBottom: '8px'
+        }}>
+          メタクリ創造性診断
+        </p>
         <h1 style={{
           color: 'white',
-          fontSize: '36px',
+          fontSize: '28px',
           fontWeight: '800',
-          marginBottom: '10px',
+          marginBottom: '0',
           textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
         }}>
           あなたの創造性バランス
         </h1>
-        <p style={{
-          color: 'rgba(255, 255, 255, 0.9)',
-          fontSize: '18px',
-          fontWeight: '500',
-          letterSpacing: '0.05em'
-        }}>
-          Your Creativity Balance
-        </p>
       </div>
 
       {/* 説明文 */}
@@ -202,24 +216,85 @@ const CreativeCompassResults = ({ results, results2, basicInfo, onRestart }) => 
         {dimensionsData.map((dimension) => {
           const val1 = results[dimension.id] ?? 0.5;
           const val2 = results2 ? results2[dimension.id] : undefined;
-          if (dimension.id === 'thinking') {
-            console.log('思考軸 - タイプ1:', val1, 'タイプ2:', val2);
-          }
+
+          // 極名を取得
+          const type1Pole = val1 < 0.5 ? dimension.pole_a : dimension.pole_b;
+          const type2Pole = val2 !== undefined ? (val2 < 0.5 ? dimension.pole_a : dimension.pole_b) : null;
+
           return (
-            <DimensionSlider
-              key={dimension.id}
-              dimension={dimension.dimension}
-              pole_a={dimension.pole_a}
-              keywords_a={dimension.keywords_a}
-              pole_b={dimension.pole_b}
-              keywords_b={dimension.keywords_b}
-              value={val1}
-              value2={val2}
-              readOnly={true}
-              showDescription={false}
-              showPositionText={false}
-              compact={true}
-            />
+            <div key={dimension.id} style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+            }}>
+              {/* 軸名（暗めの帯・白背景カードとコントラストを出す） */}
+              <div style={{
+                backgroundColor: '#1f2937',
+                padding: '14px 20px',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  color: 'white'
+                }}>
+                  {dimension.dimension}
+                </div>
+              </div>
+
+              {/* コンテンツエリア */}
+              <div style={{ padding: '16px 20px' }}>
+                {/* あなたの結果（スマホでは2行に） */}
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  gap: '8px 24px',
+                  fontSize: '16px',
+                  marginBottom: '8px'
+                }}>
+                  <span style={{ color: '#64748b', whiteSpace: 'nowrap' }}>
+                    直感判断: <strong>{type1Pole}</strong>
+                  </span>
+                  {type2Pole && (
+                    <span style={{ color: '#78716c', whiteSpace: 'nowrap' }}>
+                      自己認識: <strong>{type2Pole}</strong>
+                    </span>
+                  )}
+                </div>
+
+                {/* スライダー */}
+                <DimensionSlider
+                  dimension={dimension.dimension}
+                  pole_a={dimension.pole_a}
+                  keywords_a={dimension.keywords_a}
+                  pole_b={dimension.pole_b}
+                  keywords_b={dimension.keywords_b}
+                  value={val1}
+                  value2={val2}
+                  readOnly={true}
+                  showDescription={false}
+                  showPositionText={false}
+                  hideKeywords={true}
+                  hideDimensionTitle={true}
+                />
+
+                {/* 軸の説明 */}
+                <div style={{
+                  marginTop: '16px',
+                  padding: '16px',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                  color: '#4b5563',
+                  whiteSpace: 'pre-line'
+                }}>
+                  {dimension.description}
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>
