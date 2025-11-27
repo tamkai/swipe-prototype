@@ -319,7 +319,7 @@ const sanitizeReportHtml = (html) => {
     }
   }
 
-  // 2. DOCTYPE, html, head, bodyタグを除去
+  // 2. 完全なHTMLドキュメント構造を除去
   // <!DOCTYPE ...>を除去
   sanitized = sanitized.replace(/<!DOCTYPE[^>]*>/gi, '');
   // <html ...>と</html>を除去
@@ -328,6 +328,15 @@ const sanitizeReportHtml = (html) => {
   sanitized = sanitized.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
   // <body ...>と</body>を除去
   sanitized = sanitized.replace(/<\/?body[^>]*>/gi, '');
+  // 念のため残っている可能性のあるメタ系タグを除去
+  // <title>...</title>を除去
+  sanitized = sanitized.replace(/<title[^>]*>[\s\S]*?<\/title>/gi, '');
+  // <meta ...>を除去（自己終了タグ）
+  sanitized = sanitized.replace(/<meta[^>]*\/?>/gi, '');
+  // <link ...>を除去（外部CSS等）
+  sanitized = sanitized.replace(/<link[^>]*\/?>/gi, '');
+  // <script>...</script>を除去（セキュリティ対策）
+  sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
 
   // 3. 画像パスを絶対パスに変換
   // src="metakuri.png" → src="/metakuri.png"
