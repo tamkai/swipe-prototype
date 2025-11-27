@@ -303,19 +303,68 @@ const TabButton = ({ active, onClick, label }) => (
   </button>
 );
 
+// CSSセレクタをスコープ化する関数
+const scopeStyles = (styleContent, scopeClass) => {
+  if (!styleContent) return '';
+
+  // <style>タグの中身を取り出す
+  const styleMatch = styleContent.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+  if (!styleMatch) return styleContent;
+
+  let css = styleMatch[1];
+
+  // 除外するセレクタ（グローバルに適用すべきでないもの）
+  // *, body, html などはスコープ化せず除去
+  css = css.replace(/\*\s*\{[^}]*\}/g, ''); // * { ... } を除去
+  css = css.replace(/body\s*\{[^}]*\}/g, ''); // body { ... } を除去
+  css = css.replace(/html\s*\{[^}]*\}/g, ''); // html { ... } を除去
+  css = css.replace(/@page\s*\{[^}]*\}/g, ''); // @page { ... } を除去（印刷用）
+
+  // 各ルールをスコープ化
+  // セレクタ { ... } のパターンを見つけて、セレクタの前に .report-content を追加
+  css = css.replace(
+    /([^{}@]+)\{([^{}]*)\}/g,
+    (match, selector, rules) => {
+      // @で始まるルール（@media等）はそのまま
+      if (selector.trim().startsWith('@')) {
+        return match;
+      }
+
+      // セレクタをカンマで分割して各々にスコープを追加
+      const scopedSelectors = selector
+        .split(',')
+        .map(s => {
+          const trimmed = s.trim();
+          if (!trimmed) return '';
+          // .container などのクラスセレクタ、h1, p などの要素セレクタ
+          return `.${scopeClass} ${trimmed}`;
+        })
+        .filter(s => s)
+        .join(', ');
+
+      return `${scopedSelectors} {${rules}}`;
+    }
+  );
+
+  return `<style>${css}</style>`;
+};
+
 // レポートHTMLをサニタイズする関数
 const sanitizeReportHtml = (html) => {
   if (!html) return '';
 
   let sanitized = html;
 
-  // 1. <head>内の<style>タグを抽出して保持
+  // 1. <head>内の<style>タグを抽出してスコープ化
   let extractedStyles = '';
   const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/gi);
   if (headMatch) {
     const styleMatches = headMatch[0].match(/<style[^>]*>[\s\S]*?<\/style>/gi);
     if (styleMatches) {
-      extractedStyles = styleMatches.join('\n');
+      // 各スタイルをスコープ化して結合
+      extractedStyles = styleMatches
+        .map(style => scopeStyles(style, 'report-content'))
+        .join('\n');
     }
   }
 
