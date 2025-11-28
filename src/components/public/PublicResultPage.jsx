@@ -405,6 +405,7 @@ const sanitizeReportHtml = (html) => {
 
   // 4. 基本スタイルと画像サイズ制限を追加
   // bodyに適用されていたスタイルを.report-contentに適用
+  // !importantで確実にタイトルを中央揃えにする
   const baseAndImageStyle = `
     <style>
       .report-content {
@@ -418,6 +419,14 @@ const sanitizeReportHtml = (html) => {
         height: auto;
         display: block;
         margin: 1em auto;
+      }
+      .report-content .title-page {
+        text-align: center !important;
+      }
+      .report-content .title-page h1,
+      .report-content .title-page .subtitle,
+      .report-content .title-page .title-ornament {
+        text-align: center !important;
       }
     </style>
   `;
