@@ -313,6 +313,9 @@ const scopeStyles = (styleContent, scopeClass) => {
 
   let css = styleMatch[1];
 
+  // CSSコメント /* ... */ を除去（正規表現マッチングに干渉するため）
+  css = css.replace(/\/\*[\s\S]*?\*\//g, '');
+
   // 除外するセレクタ（グローバルに適用すべきでないもの）
   // *, body, html などはスコープ化せず除去
   css = css.replace(/\*\s*\{[^}]*\}/g, ''); // * { ... } を除去
