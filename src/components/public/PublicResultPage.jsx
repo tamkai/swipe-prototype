@@ -400,9 +400,16 @@ const sanitizeReportHtml = (html) => {
     }
   );
 
-  // 4. 画像サイズを制限するスタイルを追加
-  const imageConstraintStyle = `
+  // 4. 基本スタイルと画像サイズ制限を追加
+  // bodyに適用されていたスタイルを.report-contentに適用
+  const baseAndImageStyle = `
     <style>
+      .report-content {
+        font-family: "Noto Sans CJK JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+        line-height: 1.8;
+        color: #2d2d2d;
+        font-size: 15px;
+      }
       .report-content img {
         max-width: 100%;
         height: auto;
@@ -412,9 +419,9 @@ const sanitizeReportHtml = (html) => {
     </style>
   `;
 
-  // 5. 抽出したスタイル + 画像制限スタイル + コンテンツを結合
+  // 5. 抽出したスタイル + 基本スタイル + コンテンツを結合
   // コンテンツをreport-contentクラスでラップ
-  sanitized = `${extractedStyles}${imageConstraintStyle}<div class="report-content">${sanitized.trim()}</div>`;
+  sanitized = `${extractedStyles}${baseAndImageStyle}<div class="report-content">${sanitized.trim()}</div>`;
 
   return sanitized;
 };
@@ -439,13 +446,12 @@ const ReportTab = ({ data }) => {
 
   return (
     <div>
-      {/* HTMLレポート表示 */}
+      {/* HTMLレポート表示 - レポートHTML内のスタイルをそのまま活かすため最小限のスタイル */}
       <div
         style={{
-          backgroundColor: 'white',
+          backgroundColor: '#f5f3f0',
           borderRadius: '16px',
-          padding: '32px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+          overflow: 'hidden'
         }}
         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
       />
